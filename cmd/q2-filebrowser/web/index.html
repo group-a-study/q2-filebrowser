@@ -213,7 +213,7 @@ const store = { get(k, d) { try { const v = localStorage.getItem("q2fb." + k); r
   set(k, v) { try { localStorage.setItem("q2fb." + k, JSON.stringify(v)); } catch {} } };
 
 const S = { path: "/", entries: [], sel: new Set(), selecting: false, sort: store.get("sort", "name"), desc: store.get("desc", false),
-  hidden: store.get("hidden", false), readOnly: false, searching: "", found: null, uploading: null };
+  hidden: store.get("hidden", false), readOnly: false, searching: "", found: null, uploading: null, view: [], anchor: null };
 
 function size(n) {
   if (n >= 1 << 30) return (n / (1 << 30)).toFixed(1) + " GB";
@@ -309,16 +309,18 @@ function render() {
   crumbs();
   const list = $("#list"); list.textContent = "";
   const items = S.found ? S.found : sorted(S.entries);
+  S.view = items.map(e => e.path || join(S.path, e.name));
   for (const e of items) {
     const p = e.path || join(S.path, e.name), k = kind(e);
-    const li = el("li", { class: "row" + (S.sel.has(p) ? " sel" : ""), "data-path": p });
+    const li = el("li", { class: "row" + (S.sel.has(p) ? " sel" : ""), "data-path": p,
+      onmousedown: ev => { if (ev.shiftKey || ev.ctrlKey || ev.metaKey) ev.preventDefault(); } }); // no text selection
     if (S.selecting) li.append(el("span", { class: "check" }));
     const meta = S.found ? where(parent(p)) : (e.dir ? when(e.mtime) : size(e.size) + " · " + when(e.mtime));
     li.append(el("span", { class: "ic " + (k === "folder" ? "dir" : k) }, icon(k)),
       el("span", { class: "txt" }, el("div", { class: "name", text: e.name }), el("div", { class: "meta", text: meta })));
     if (!S.selecting) li.append(el("button", { class: "more", title: "More", "aria-label": "More for " + e.name, onclick: ev => { ev.stopPropagation(); sheet(e, p); } }, icon("more")));
-    li.onclick = () => {
-      if (S.selecting) { S.sel.has(p) ? S.sel.delete(p) : S.sel.add(p); li.classList.toggle("sel"); selbar(); return; }
+    li.onclick = ev => {
+      if (S.selecting || ev.shiftKey || ev.ctrlKey || ev.metaKey) { pick(p, ev.shiftKey); return; }
       if (e.dir) load(p); else if (playable(e)) play(p); else sheet(e, p);
     };
     list.append(li);
@@ -331,13 +333,30 @@ function render() {
   selbar();
 }
 
+// pick chooses a row, or with range every row from the last one clicked to this one, all set as that
+// one is (so a Shift-click after taking a row away takes the run away). Shift-, Ctrl- or Cmd-click
+// outside Select starts it with the row.
+function pick(p, range) {
+  if (!S.selecting) { S.selecting = true; S.sel.clear(); S.anchor = null; }
+  const a = S.view.indexOf(S.anchor), b = S.view.indexOf(p);
+  if (range && a >= 0 && b >= 0) {
+    const on = S.sel.has(S.anchor);
+    for (const q of S.view.slice(Math.min(a, b), Math.max(a, b) + 1)) on ? S.sel.add(q) : S.sel.delete(q);
+  } else S.sel.has(p) ? S.sel.delete(p) : S.sel.add(p);
+  S.anchor = p;
+  if (!$("#list .check")) { render(); return; } // Select just started: the rows get their checks
+  for (const li of $("#list").children) li.classList.toggle("sel", S.sel.has(li.dataset.path));
+  selbar();
+}
+function unselect() { S.selecting = false; S.sel.clear(); render(); }
+const mouse = matchMedia("(hover: hover) and (pointer: fine)");
 function selbar() {
   $("#selbar").classList.toggle("hidden", !S.selecting);
-  $("#selcount").textContent = S.sel.size ? S.sel.size + " chosen" : "Tap to choose";
+  $("#selcount").textContent = S.sel.size ? S.sel.size + " chosen" : mouse.matches ? "Click to choose, Shift-click for a range" : "Tap to choose";
   for (const b of ["#seldl", "#selmv", "#selrm"]) $(b).disabled = !S.sel.size;
 }
-$("#selmode").onclick = () => { S.selecting = !S.selecting; S.sel.clear(); render(); };
-$("#seldone").onclick = () => { S.selecting = false; S.sel.clear(); render(); };
+$("#selmode").onclick = () => { S.selecting = !S.selecting; S.sel.clear(); S.anchor = null; render(); };
+$("#seldone").onclick = unselect;
 $("#seldl").onclick = () => download([...S.sel]);
 $("#selmv").onclick = () => moveDialog([...S.sel]);
 $("#selrm").onclick = () => removeDialog([...S.sel]);
@@ -374,7 +393,16 @@ function modal(...kids) {
   return sh;
 }
 function close() { $("#modal").textContent = ""; }
-document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+// Escape closes a dialog, else ends Select; Ctrl- or Cmd-A chooses every row shown (not while typing).
+document.addEventListener("keydown", e => {
+  const open = $("#modal").childElementCount > 0;
+  if (e.key === "Escape") { if (open) close(); else if (S.selecting) unselect(); return; }
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "a" && !open && S.view.length &&
+      !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName) && !$("#app").classList.contains("hidden")) {
+    e.preventDefault();
+    S.selecting = true; S.view.forEach(p => S.sel.add(p)); S.anchor = null; render();
+  }
+});
 
 function sheet(e, p) {
   const k = kind(e), acts = el("div", { class: "acts" });
