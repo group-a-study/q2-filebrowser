@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Q2 Files</title>
+<style>
+:root { --bg: #f4f5f7; --panel: #fff; --panel2: #eef0f3; --line: #dfe2e7; --text: #16191d; --muted: #646b75;
+  --accent: #b86e00; --accent-ink: #fff; --accent-soft: #fbecd2; --bad: #c62f3a; --good: #1f8a70; --folder: #e9a23b;
+  --shadow: 0 10px 30px rgba(10, 14, 20, .18); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1215; --panel: #171b20; --panel2: #1e242a; --line: #2a3138; --text: #e9edf1; --muted: #98a2ad;
+  --accent: #f0a73a; --accent-ink: #1d1200; --accent-soft: #3a2a12; --bad: #ff6b74; --good: #3cc49f; --folder: #f0b04f;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .5); } }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: .45; cursor: default; }
+.hidden { display: none !important; }
+main { max-width: 860px; margin: 0 auto; padding: 0 0 calc(120px + env(safe-area-inset-bottom)); }
+header { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: calc(10px + env(safe-area-inset-top)) 16px 8px;
+  border-bottom: 1px solid var(--line); }
+.top { display: flex; align-items: center; gap: 10px; }
+.logo { width: 34px; height: 34px; border-radius: 10px; background: var(--folder); display: grid; place-items: center; flex: none; }
+.logo svg { width: 20px; height: 20px; fill: #fff; }
+h1 { font-size: 18px; margin: 0; flex: 1; min-width: 0; }
+.badge { font-size: 12px; font-weight: 650; padding: 2px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.meter { margin-top: 8px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+.bar { flex: 1; height: 6px; border-radius: 4px; background: var(--panel2); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+.crumbs { display: flex; gap: 2px; align-items: center; overflow-x: auto; scrollbar-width: none; margin-top: 8px; white-space: nowrap; }
+.crumbs::-webkit-scrollbar { display: none; }
+.crumbs button { border: 0; background: none; padding: 4px 6px; border-radius: 6px; color: var(--muted); font-size: 14px; }
+.crumbs button:last-child { color: var(--text); font-weight: 650; }
+.crumbs span { color: var(--muted); opacity: .6; }
+.tools { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.tools button, .btn { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; min-height: 40px; padding: 6px 12px;
+  display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; }
+.tools button svg, .btn svg { width: 18px; height: 18px; fill: currentColor; flex: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--bad); }
+.search { flex: 1 1 160px; display: flex; min-width: 0; }
+.search input { width: 100%; min-height: 40px; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 6px 12px; outline: none; }
+.search input:focus, .field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.note { margin: 12px 16px; padding: 12px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+.note b { color: var(--text); }
+ul.list { list-style: none; margin: 8px 0 0; padding: 0; }
+.row { display: flex; align-items: center; gap: 12px; padding: 8px 16px; min-height: 56px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.row:hover { background: var(--panel); }
+.row.sel { background: var(--accent-soft); }
+.row .ic { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; flex: none; background: var(--panel2); }
+.row .ic svg { width: 22px; height: 22px; fill: var(--muted); }
+.row .ic.dir { background: transparent; }
+.row .ic.dir svg { width: 30px; height: 30px; fill: var(--folder); }
+.row .ic.audio svg { fill: var(--accent); }
+.row .txt { flex: 1; min-width: 0; }
+.row .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .meta { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .more { border: 0; background: none; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+.row .more:hover { background: var(--panel2); }
+.row .more svg { width: 20px; height: 20px; fill: var(--muted); }
+.check { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--line); flex: none; display: grid; place-items: center; }
+.row.sel .check { background: var(--accent); border-color: var(--accent); }
+.row.sel .check::after { content: ""; width: 10px; height: 6px; border: 2px solid var(--accent-ink); border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+.empty { text-align: center; color: var(--muted); padding: 48px 16px; }
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.dock > * { pointer-events: auto; max-width: 860px; width: 100%; margin: 0 auto; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; box-shadow: var(--shadow); padding: 10px 12px; }
+.selbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.selbar b { flex: 1; min-width: 90px; }
+.ups .head { display: flex; align-items: center; gap: 8px; }
+.ups .head b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ups .bar { margin-top: 8px; height: 8px; }
+.ups .sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.player { display: flex; flex-direction: column; gap: 6px; }
+.player .head { display: flex; gap: 8px; align-items: center; }
+.player .head b { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player audio { width: 100%; height: 40px; }
+.x { border: 0; background: var(--panel2); width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.x svg { width: 16px; height: 16px; fill: var(--muted); }
+.scrim { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, .45); display: flex; align-items: flex-end; justify-content: center; }
+@media (min-width: 640px) { .scrim { align-items: center; } }
+.sheet { background: var(--panel); width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  max-height: 88vh; overflow: auto; box-shadow: var(--shadow); }
+@media (min-width: 640px) { .sheet { border-radius: 18px; } }
+.sheet h2 { font-size: 17px; margin: 0 0 4px; word-break: break-word; }
+.sheet .sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; word-break: break-word; }
+.acts { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+.acts button { border: 0; background: none; text-align: left; padding: 12px 10px; border-radius: 10px; display: flex; align-items: center; gap: 12px; font-size: 15px; }
+.acts button:hover { background: var(--panel2); }
+.acts button svg { width: 20px; height: 20px; fill: var(--muted); }
+.acts button.danger { color: var(--bad); }
+.acts button.danger svg { fill: var(--bad); }
+.field { width: 100%; min-height: 44px; border: 1px solid var(--line); background: var(--panel2); border-radius: 10px; padding: 8px 12px; outline: none; }
+.btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+.err { color: var(--bad); font-size: 13px; min-height: 18px; margin-top: 6px; }
+.preview { margin: 4px 0 8px; border-radius: 12px; overflow: hidden; background: var(--panel2); }
+.preview img { display: block; max-width: 100%; max-height: 55vh; margin: 0 auto; }
+.preview pre { margin: 0; padding: 12px; max-height: 50vh; overflow: auto; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
+.picker { border: 1px solid var(--line); border-radius: 12px; max-height: 45vh; overflow: auto; margin-top: 8px; }
+.picker .row { min-height: 44px; padding: 6px 12px; }
+.picker .row .ic { width: 28px; height: 28px; }
+.pin { font-size: 28px; letter-spacing: .4em; text-align: center; font-weight: 700; }
+.login { max-width: 420px; margin: 12vh auto 0; padding: 0 16px; text-align: center; }
+.login .logo { width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 12px; }
+.login .logo svg { width: 32px; height: 32px; }
+.login p { color: var(--muted); }
+.drop { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .5); display: grid; place-items: center; pointer-events: none; }
+.drop div { background: var(--panel); border: 2px dashed var(--accent); border-radius: 18px; padding: 32px 40px; font-weight: 650; font-size: 18px; }
+#toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 30; background: var(--text); color: var(--bg);
+  padding: 10px 16px; border-radius: 12px; font-size: 14px; box-shadow: var(--shadow); max-width: calc(100% - 32px); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z"/></symbol>
+  <symbol id="i-audio" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></symbol>
+  <symbol id="i-zip" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm-2 6h-2v2h2v2h-2v2h-2v-2h2v-2h-2v-2h2v-2h-2V8h2v2h2v2z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></symbol>
+  <symbol id="i-newdir" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z"/></symbol>
+  <symbol id="i-select" viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14l-5-5 1.4-1.4 3.6 3.6 7.6-7.6L19 8l-9 9z"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24"><path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
+  <symbol id="i-move" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm-6 12v-3h-4v-4h4V8l5 5-5 5z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.3 7.3 0 0 0 1.7 1L11 21h4l.4-2.9a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.5-2.2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></symbol>
+</svg>
+
+<section id="login" class="login hidden">
+  <div class="logo"><svg><use href="#i-folder"/></svg></div>
+  <h1>Q2 Files</h1>
+  <p>Enter the PIN on the Q2's screen<br>(Streaming → File Browser).</p>
+  <form id="pinform"><input class="field pin" id="pinv" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="PIN">
+    <div class="err" id="pinerr"></div><button class="btn primary" style="width:100%;justify-content:center;margin-top:8px">Continue</button></form>
+</section>
+
+<main id="app" class="hidden">
+  <header>
+    <div class="top">
+      <div class="logo"><svg><use href="#i-folder"/></svg></div>
+      <h1>Q2 Files</h1>
+      <span class="badge hidden" id="ro">Read only</span>
+      <button class="x" id="settings" title="Options" aria-label="Options"><svg><use href="#i-gear"/></svg></button>
+    </div>
+    <div class="meter"><div class="bar"><i id="used"></i></div><span id="room"></span></div>
+    <nav class="crumbs" id="crumbs" aria-label="Folder"></nav>
+    <div class="tools">
+      <button id="up" class="can-change"><svg><use href="#i-upload"/></svg>Upload</button>
+      <button id="mkdir" class="can-change"><svg><use href="#i-newdir"/></svg>Folder</button>
+      <button id="selmode"><svg><use href="#i-select"/></svg>Select</button>
+      <button id="sort"><svg><use href="#i-sort"/></svg><span id="sortname">Name</span></button>
+      <form class="search" id="searchform"><input id="q" type="search" placeholder="Search here and below" enterkeyhint="search" aria-label="Search"></form>
+    </div>
+  </header>
+  <div id="notice" class="note hidden"></div>
+  <ul class="list" id="list"></ul>
+  <div class="empty hidden" id="empty"></div>
+</main>
+
+<div class="dock" id="dock">
+  <div class="ups hidden" id="ups">
+    <div class="head"><b id="upname"></b><button class="x" id="upstop" title="Stop" aria-label="Stop uploading"><svg><use href="#i-x"/></svg></button></div>
+    <div class="bar"><i id="upbar"></i></div>
+    <div class="sub" id="upsub"></div>
+  </div>
+  <div class="selbar hidden" id="selbar">
+    <b id="selcount"></b>
+    <button class="btn" id="seldl"><svg><use href="#i-down"/></svg>Download</button>
+    <button class="btn can-change" id="selmv"><svg><use href="#i-move"/></svg>Move</button>
+    <button class="btn danger can-change" id="selrm"><svg><use href="#i-trash"/></svg>Delete</button>
+    <button class="x" id="seldone" title="Done" aria-label="Done selecting"><svg><use href="#i-x"/></svg></button>
+  </div>
+  <div class="player hidden" id="player">
+    <div class="head"><b id="playname"></b><button class="x" id="playstop" title="Close" aria-label="Close the player"><svg><use href="#i-x"/></svg></button></div>
+    <audio id="audio" controls preload="metadata"></audio>
+  </div>
+</div>
+
+<input type="file" id="pickfiles" multiple hidden>
+<input type="file" id="pickdir" webkitdirectory multiple hidden>
+<div class="drop hidden" id="drop"><div>Drop to upload here</div></div>
+<div id="toast" class="hidden" role="status"></div>
+<div id="modal"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const el = (tag, props = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "text") e.textContent = v; else e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+};
+const icon = id => { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); const u = document.createElementNS("http://www.w3.org/2000/svg", "use"); u.setAttribute("href", "#i-" + id); s.append(u); return s; };
+const store = { get(k, d) { try { const v = localStorage.getItem("q2fb." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("q2fb." + k, JSON.stringify(v)); } catch {} } };
+
+const S = { path: "/", entries: [], sel: new Set(), selecting: false, sort: store.get("sort", "name"), desc: store.get("desc", false),
+  hidden: store.get("hidden", false), readOnly: false, searching: "", found: null, uploading: null };
+
+function size(n) {
+  if (n >= 1 << 30) return (n / (1 << 30)).toFixed(1) + " GB";
+  if (n >= 1 << 20) return (n / (1 << 20)).toFixed(1) + " MB";
+  if (n >= 1 << 10) return Math.round(n / 1024) + " KB";
+  return n + " B";
+}
+function when(ms) {
+  const d = new Date(ms), now = new Date();
+  return d.toDateString() === now.toDateString() ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString([], { day: "numeric", month: "short", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" });
+}
+const join = (dir, name) => (dir === "/" ? "" : dir) + "/" + name;
+const parent = p => p.slice(0, p.lastIndexOf("/")) || "/";
+const where = dir => dir === "/" ? "Card" : "Card" + dir.replaceAll("/", " › ");
+const base = p => p.slice(p.lastIndexOf("/") + 1);
+const ext = n => { const i = n.lastIndexOf("."); return i > 0 ? n.slice(i + 1).toLowerCase() : ""; };
+const KIND = { audio: "mp3 flac m4a m4b aac ogg opus oga wav aif aiff ape wv dsf dff alac".split(" "),
+  image: "jpg jpeg png gif webp bmp".split(" "), video: "mp4 m4v mkv avi mov webm".split(" "),
+  text: "txt cue lrc m3u m3u8 log ini json md nfo".split(" "), book: "epub pdf mobi azw3 fb2 cbz".split(" "), zip: "zip rar 7z tar gz".split(" ") };
+function kind(e) { if (e.dir) return "folder"; const x = ext(e.name); for (const k in KIND) if (KIND[k].includes(x)) return k; return "file"; }
+const playable = e => kind(e) === "audio" && ["mp3", "flac", "m4a", "m4b", "aac", "ogg", "opus", "oga", "wav"].includes(ext(e.name));
+
+let toastTimer;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add("hidden"), 3200); }
+
+class ApiError extends Error { constructor(msg, status) { super(msg); this.status = status; } }
+async function api(path, { method = "GET", body, query } = {}) {
+  const u = new URL("/api/" + path, location.href);
+  for (const [k, v] of Object.entries(query || {})) (Array.isArray(v) ? v : [v]).forEach(x => u.searchParams.append(k, x));
+  let r;
+  try {
+    r = await fetch(u, method === "GET" ? {} : { method, headers: { "Content-Type": "application/json", "X-Q2": "1" }, body: JSON.stringify(body || {}) });
+  } catch { throw new ApiError("The Q2 can't be reached. Is File Browser on, and the phone on the same Wi-Fi?", 0); }
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { showLogin(); throw new ApiError("Sign in", 401); }
+  if (!r.ok) throw new ApiError(j.error || r.statusText, r.status);
+  return j;
+}
+const fileURL = (p, inline) => "/api/file?" + new URLSearchParams({ path: p, ...(inline ? { inline: "1" } : {}) });
+
+function showLogin() { $("#app").classList.add("hidden"); $("#login").classList.remove("hidden"); setTimeout(() => $("#pinv").focus(), 50); }
+$("#pinform").onsubmit = async e => {
+  e.preventDefault();
+  try { await api("login", { method: "POST", body: { pin: $("#pinv").value } }); $("#login").classList.add("hidden"); start(); }
+  catch (err) { $("#pinerr").textContent = err.message; }
+};
+
+async function refreshState() {
+  try {
+    const st = await api("state");
+    S.readOnly = st.read_only;
+    document.body.classList.toggle("ro", st.read_only);
+    $("#ro").classList.toggle("hidden", !st.read_only);
+    document.querySelectorAll(".can-change").forEach(b => b.classList.toggle("hidden", st.read_only));
+    if (st.total > 0) { $("#used").style.width = ((st.total - st.free) / st.total * 100).toFixed(1) + "%"; $("#room").textContent = size(st.free) + " free of " + size(st.total); }
+    return st;
+  } catch (err) { return null; }
+}
+
+function notice(msg) { const n = $("#notice"); n.textContent = msg || ""; n.classList.toggle("hidden", !msg); }
+
+async function load(path = S.path, keep) {
+  try {
+    const r = await api("list", { query: { path, hidden: S.hidden ? "1" : "0" } });
+    S.path = r.path; S.entries = r.entries; S.found = null; S.searching = "";
+    if (!keep) { S.sel.clear(); }
+    if (location.hash.slice(1) !== encodeURI(S.path)) history[keep ? "replaceState" : "pushState"](null, "", "#" + encodeURI(S.path));
+    notice("");
+    render();
+  } catch (err) {
+    if (err.status === 404 && path !== "/") return load(parent(path));
+    if (err.status !== 401) { notice(err.message); S.entries = []; render(); }
+  }
+}
+window.onpopstate = () => load(decodeURI(location.hash.slice(1) || "/"), true);
+
+function sorted(list) {
+  const k = S.sort, d = S.desc ? -1 : 1;
+  return [...list].sort((a, b) => (b.dir - a.dir) || d * (k === "size" ? a.size - b.size : k === "date" ? a.mtime - b.mtime :
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })));
+}
+
+function crumbs() {
+  const c = $("#crumbs"); c.textContent = "";
+  const parts = S.path.split("/").filter(Boolean);
+  c.append(el("button", { text: "Card", onclick: () => load("/") }));
+  parts.forEach((p, i) => { c.append(el("span", { text: "›" }), el("button", { text: p, onclick: () => load("/" + parts.slice(0, i + 1).join("/")) })); });
+  c.scrollLeft = c.scrollWidth;
+}
+
+function render() {
+  crumbs();
+  const list = $("#list"); list.textContent = "";
+  const items = S.found ? S.found : sorted(S.entries);
+  for (const e of items) {
+    const p = e.path || join(S.path, e.name), k = kind(e);
+    const li = el("li", { class: "row" + (S.sel.has(p) ? " sel" : ""), "data-path": p });
+    if (S.selecting) li.append(el("span", { class: "check" }));
+    const meta = S.found ? where(parent(p)) : (e.dir ? when(e.mtime) : size(e.size) + " · " + when(e.mtime));
+    li.append(el("span", { class: "ic " + (k === "folder" ? "dir" : k) }, icon(k)),
+      el("span", { class: "txt" }, el("div", { class: "name", text: e.name }), el("div", { class: "meta", text: meta })));
+    if (!S.selecting) li.append(el("button", { class: "more", title: "More", "aria-label": "More for " + e.name, onclick: ev => { ev.stopPropagation(); sheet(e, p); } }, icon("more")));
+    li.onclick = () => {
+      if (S.selecting) { S.sel.has(p) ? S.sel.delete(p) : S.sel.add(p); li.classList.toggle("sel"); selbar(); return; }
+      if (e.dir) load(p); else if (playable(e)) play(p); else sheet(e, p);
+    };
+    list.append(li);
+  }
+  const empty = $("#empty");
+  empty.textContent = S.found ? `Nothing named like “${S.searching}” here.` : "This folder is empty." + (S.readOnly ? "" : " Upload files, or drop them here.");
+  empty.classList.toggle("hidden", items.length > 0);
+  $("#sortname").textContent = { name: "Name", date: "Date", size: "Size" }[S.sort] + (S.desc ? " ↓" : " ↑");
+  $("#sort").title = (ORDERS.find(([k, d]) => k === S.sort && d === S.desc) || ORDERS[0])[2];
+  selbar();
+}
+
+function selbar() {
+  $("#selbar").classList.toggle("hidden", !S.selecting);
+  $("#selcount").textContent = S.sel.size ? S.sel.size + " chosen" : "Tap to choose";
+  for (const b of ["#seldl", "#selmv", "#selrm"]) $(b).disabled = !S.sel.size;
+}
+$("#selmode").onclick = () => { S.selecting = !S.selecting; S.sel.clear(); render(); };
+$("#seldone").onclick = () => { S.selecting = false; S.sel.clear(); render(); };
+$("#seldl").onclick = () => download([...S.sel]);
+$("#selmv").onclick = () => moveDialog([...S.sel]);
+$("#selrm").onclick = () => removeDialog([...S.sel]);
+const ORDERS = [["name", false, "Name, A to Z"], ["name", true, "Name, Z to A"], ["date", true, "Newest first"],
+  ["date", false, "Oldest first"], ["size", true, "Largest first"], ["size", false, "Smallest first"]];
+$("#sort").onclick = () => {
+  const acts = el("div", { class: "acts" });
+  for (const [k, d, label] of ORDERS)
+    acts.append(el("button", { style: k === S.sort && d === S.desc ? "font-weight:700;color:var(--accent)" : "",
+      onclick: () => { S.sort = k; S.desc = d; store.set("sort", k); store.set("desc", d); close(); render(); } }, icon("sort"), label));
+  modal(el("h2", { text: "Sort folders and files" }), acts);
+};
+
+function download(paths) {
+  const one = paths.length === 1 && S.entries.concat(S.found || []).find(e => (e.path || join(S.path, e.name)) === paths[0] && !e.dir);
+  const a = el("a", { href: one ? fileURL(paths[0]) : "/api/zip?" + new URLSearchParams(paths.map(p => ["path", p])) });
+  document.body.append(a); a.click(); a.remove();
+  if (!one) toast("The ZIP starts in a moment: big folders take a while");
+}
+
+function play(p) {
+  $("#player").classList.remove("hidden");
+  $("#playname").textContent = base(p);
+  const a = $("#audio"); a.src = fileURL(p, true); a.play().catch(() => {});
+}
+$("#playstop").onclick = () => { const a = $("#audio"); a.pause(); a.removeAttribute("src"); a.load(); $("#player").classList.add("hidden"); };
+
+// Modals: a sheet over a scrim, closed by its buttons, the scrim or Escape.
+function modal(...kids) {
+  const m = $("#modal"); m.textContent = "";
+  const sh = el("div", { class: "sheet", role: "dialog", "aria-modal": "true" }, ...kids);
+  const scrim = el("div", { class: "scrim", onclick: e => { if (e.target === scrim) close(); } }, sh);
+  m.append(scrim);
+  return sh;
+}
+function close() { $("#modal").textContent = ""; }
+document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+
+function sheet(e, p) {
+  const k = kind(e), acts = el("div", { class: "acts" });
+  const act = (ic, label, fn, cls) => acts.append(el("button", { class: cls || "", onclick: () => { close(); fn(); } }, icon(ic), label));
+  let prev = null;
+  if (k === "image") prev = el("div", { class: "preview" }, el("img", { src: fileURL(p, true), alt: e.name }));
+  if (e.dir) act("folder", "Open", () => load(p));
+  if (playable(e)) act("play", "Play here", () => play(p));
+  if (k === "text" && e.size < 512 << 10) act("eye", "Show", () => showText(e, p));
+  if (k === "image" || k === "video" || ext(e.name) === "pdf") act("eye", "Open in a new tab", () => window.open(fileURL(p, true), "_blank", "noopener"));
+  act("down", e.dir ? "Download as ZIP" : "Download", () => download([p]));
+  if (S.found) act("folder", "Show in its folder", () => load(parent(p)));
+  if (!S.readOnly) {
+    act("edit", "Rename", () => renameDialog(e, p));
+    act("move", "Move", () => moveDialog([p]));
+    act("trash", "Delete", () => removeDialog([p]), "danger");
+  }
+  modal(el("h2", { text: e.name }), el("p", { class: "sub", text: (e.dir ? "Folder" : size(e.size)) + " · " + when(e.mtime) + (S.found ? " · " + where(parent(p)) : "") }), prev, acts);
+}
+
+async function showText(e, p) {
+  const pre = el("pre", { text: "Loading…" });
+  modal(el("h2", { text: e.name }), el("div", { class: "preview" }, pre), el("div", { class: "btns" }, el("button", { class: "btn", text: "Close", onclick: close })));
+  try { const r = await fetch(fileURL(p, true)); pre.textContent = await r.text(); } catch { pre.textContent = "Couldn't read it."; }
+}
+
+// ask is a one-field dialog; ok gets the value and returns an error message or nothing.
+function ask(title, value, label, ok, select) {
+  const input = el("input", { class: "field", value, "aria-label": title, autocapitalize: "off", spellcheck: "false" });
+  const err = el("div", { class: "err" }), go = el("button", { class: "btn primary", text: label });
+  const form = el("form", {}, input, err, el("div", { class: "btns" }, el("button", { type: "button", class: "btn", text: "Cancel", onclick: close }), go));
+  form.onsubmit = async ev => {
+    ev.preventDefault(); go.disabled = true;
+    try { const m = await ok(input.value.trim()); if (m) err.textContent = m; else close(); } finally { go.disabled = false; }
+  };
+  modal(el("h2", { text: title }), form);
+  setTimeout(() => { input.focus(); if (select) input.setSelectionRange(0, select); }, 50);
+}
+
+$("#mkdir").onclick = () => ask("New folder", "", "Make", async name => {
+  if (!name) return "Give it a name";
+  try { await api("mkdir", { method: "POST", body: { path: join(S.path, name) } }); await load(S.path, true); toast("Made " + name); }
+  catch (err) { return err.message; }
+});
+
+function renameDialog(e, p) {
+  const dot = e.dir ? -1 : e.name.lastIndexOf(".");
+  ask("Rename", e.name, "Rename", async name => {
+    if (!name || name === e.name) return name ? "" : "Give it a name";
+    try { await api("rename", { method: "POST", body: { path: p, name } }); await reload(); toast("Renamed"); }
+    catch (err) { return err.message; }
+  }, dot > 0 ? dot : e.name.length);
+}
+
+async function reload() { if (S.found) await search(S.searching); else await load(S.path, true); refreshState(); }
+
+function removeDialog(paths) {
+  const what = paths.length === 1 ? "“" + base(paths[0]) + "”" : paths.length + " items";
+  const go = el("button", { class: "btn primary", text: "Delete", style: "background:var(--bad);border-color:var(--bad)" });
+  go.onclick = async () => {
+    go.disabled = true;
+    try { await api("delete", { method: "POST", body: { paths } }); close(); S.sel.clear(); S.selecting = false; await reload(); toast("Deleted " + what); }
+    catch (err) { close(); toast(err.message); }
+  };
+  modal(el("h2", { text: "Delete " + what + "?" }), el("p", { class: "sub", text: "A folder goes with everything in it. This can't be undone." }),
+    el("div", { class: "btns" }, el("button", { class: "btn", text: "Cancel", onclick: close }), go));
+}
+
+async function moveDialog(paths) {
+  let at = S.path;
+  const title = el("p", { class: "sub" }), list = el("div", { class: "picker" }), err = el("div", { class: "err" });
+  const go = el("button", { class: "btn primary", text: "Move here" });
+  const show = async dir => {
+    try {
+      const r = await api("list", { query: { path: dir, hidden: S.hidden ? "1" : "0" } });
+      at = r.path; title.textContent = where(at); list.textContent = "";
+      if (at !== "/") list.append(el("div", { class: "row", onclick: () => show(parent(at)) }, el("span", { class: "ic dir" }, icon("folder")), el("span", { class: "txt", text: "‹ Back" })));
+      for (const e of r.entries.filter(e => e.dir)) {
+        const p = join(at, e.name), inside = paths.some(x => p === x || p.startsWith(x + "/"));
+        list.append(el("div", { class: "row", style: inside ? "opacity:.4;pointer-events:none" : "", onclick: () => show(p) },
+          el("span", { class: "ic dir" }, icon("folder")), el("span", { class: "txt" }, el("div", { class: "name", text: e.name }))));
+      }
+      go.disabled = paths.every(x => parent(x) === at);
+    } catch (e) { err.textContent = e.message; }
+  };
+  go.onclick = async () => {
+    go.disabled = true;
+    try { await api("move", { method: "POST", body: { paths, to: at } }); close(); S.sel.clear(); S.selecting = false; await reload(); toast("Moved to " + (at === "/" ? "the card" : base(at))); }
+    catch (e) { err.textContent = e.message; go.disabled = false; }
+  };
+  modal(el("h2", { text: "Move " + (paths.length === 1 ? "“" + base(paths[0]) + "”" : paths.length + " items") }), title, list, err,
+    el("div", { class: "btns" }, el("button", { class: "btn", text: "New folder", onclick: () => {
+      const name = prompt("New folder in " + (at === "/" ? "the card" : base(at)));
+      if (name) api("mkdir", { method: "POST", body: { path: join(at, name.trim()) } }).then(() => show(at), e => err.textContent = e.message);
+    } }), el("button", { class: "btn", text: "Cancel", onclick: close }), go));
+  show(at);
+}
+
+async function search(q) {
+  if (!q) { S.found = null; S.searching = ""; render(); return; }
+  notice("Searching…");
+  try {
+    const r = await api("search", { query: { path: S.path, q, hidden: S.hidden ? "1" : "0" } });
+    S.found = r.entries; S.searching = q; S.sel.clear();
+    notice(r.more ? "Showing the first " + r.entries.length + ". Search for more of the name to narrow it." : "");
+    render();
+  } catch (err) { notice(err.message); }
+}
+$("#searchform").onsubmit = e => { e.preventDefault(); $("#q").blur(); search($("#q").value.trim()); };
+$("#q").addEventListener("input", e => { if (!e.target.value && S.found) search(""); });
+
+$("#settings").onclick = () => {
+  const box = el("input", { type: "checkbox", id: "hid" }); box.checked = S.hidden;
+  box.onchange = () => { S.hidden = box.checked; store.set("hidden", S.hidden); load(S.path, true); };
+  modal(el("h2", { text: "Options" }),
+    el("label", { style: "display:flex;gap:10px;align-items:center;padding:10px 0" }, box, el("span", { text: "Show hidden files (names starting with a dot: the add-ons' settings)" })),
+    el("p", { class: "sub", text: S.readOnly ? "Read only is on: turn it off on the Q2 (Streaming → File Browser) to upload, rename, move and delete." :
+      "Read only can be turned on from the Q2: Streaming → File Browser." }),
+    el("p", { class: "sub", text: "File Browser turns off on its own after a while unused. Turn it on again from the Q2." }),
+    el("div", { class: "btns" }, el("button", { class: "btn", text: "Close", onclick: close })));
+};
+
+// Uploads: one file at a time (the Q2 writes to its card in chunks), each a PUT of its bytes.
+$("#up").onclick = () => {
+  modal(el("h2", { text: "Upload to " + (S.path === "/" ? "the card" : base(S.path)) }), el("div", { class: "acts" },
+    el("button", { onclick: () => { close(); $("#pickfiles").click(); } }, icon("audio"), "Files"),
+    el("button", { onclick: () => { close(); $("#pickdir").click(); } }, icon("folder"), "A folder, with everything in it")),
+    el("p", { class: "sub", text: "On a computer you can also drop files and folders on this page." }));
+};
+for (const id of ["#pickfiles", "#pickdir"]) $(id).onchange = e => { const fs = [...e.target.files].map(f => ({ file: f, name: f.webkitRelativePath || f.name })); e.target.value = ""; queue(fs); };
+
+async function queue(items) {
+  if (!items.length) return;
+  if (S.readOnly) { toast("Read only: allow changes on the Q2 first"); return; }
+  const dir = S.path, names = new Set(S.entries.map(e => e.name));
+  const clash = items.filter(i => names.has(i.name.split("/")[0]) && !i.name.includes("/")).length;
+  let overwrite = false;
+  if (clash) {
+    const choice = await new Promise(res => modal(el("h2", { text: clash === 1 ? "One file is here already" : clash + " files are here already" }),
+      el("p", { class: "sub", text: "Replace them, or keep both (the new ones numbered)?" }),
+      el("div", { class: "btns" }, el("button", { class: "btn", text: "Cancel", onclick: () => { close(); res(null); } }),
+        el("button", { class: "btn", text: "Keep both", onclick: () => { close(); res("keep"); } }),
+        el("button", { class: "btn primary", text: "Replace", onclick: () => { close(); res("replace"); } }))));
+    if (!choice) return;
+    overwrite = choice === "replace";
+  }
+  const u = S.uploading || (S.uploading = { list: [], done: 0, failed: 0, bytes: 0, total: 0, xhr: null, stopped: false });
+  for (const it of items) { u.list.push({ ...it, dir, overwrite }); u.total += it.file.size; }
+  if (!u.running) run();
+}
+
+async function run() {
+  const u = S.uploading; u.running = true; $("#ups").classList.remove("hidden");
+  let shown = Date.now();
+  while (u.list.length && !u.stopped) {
+    const it = u.list.shift();
+    try { await put(u, it); u.done++; }
+    catch (err) { u.failed++; toast(err.message); if (err.status === 507 || err.status === 503 || err.status === 403 || err.status === 0) { u.stopped = true; } }
+    u.bytes += it.file.size;
+    if (it.dir === S.path && !S.found && (Date.now() - shown > 3000 || !u.list.length)) { shown = Date.now(); load(S.path, true); }
+  }
+  const msg = u.stopped && u.list.length ? `Stopped: ${u.done} uploaded` : u.failed ? `${u.done} uploaded, ${u.failed} failed` : `${u.done} uploaded`;
+  S.uploading = null; $("#ups").classList.add("hidden"); toast(msg); refreshState();
+}
+
+function put(u, it) {
+  return new Promise((res, rej) => {
+    const x = new XMLHttpRequest(); u.xhr = x;
+    x.open("PUT", "/api/upload?" + new URLSearchParams({ dir: it.dir, name: it.name, ...(it.overwrite ? { overwrite: "1" } : {}) }));
+    x.setRequestHeader("X-Q2", "1");
+    x.upload.onprogress = e => upview(u, it, e.loaded);
+    x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch {} x.status === 200 ? res(j) : (x.status === 401 && showLogin(), rej(new ApiError(j.error || "Upload failed", x.status))); };
+    x.onerror = () => rej(new ApiError("The upload stopped: is the Q2 still on the Wi-Fi?", 0));
+    x.onabort = () => rej(new ApiError("Stopped", -1));
+    upview(u, it, 0); x.send(it.file);
+  });
+}
+function upview(u, it, sent) {
+  const left = u.list.length;
+  $("#upname").textContent = "Uploading " + base(it.name);
+  $("#upbar").style.width = (u.total ? (u.bytes + sent) / u.total * 100 : 0).toFixed(1) + "%";
+  $("#upsub").textContent = `${u.done + u.failed + 1} of ${u.done + u.failed + 1 + left} · ${size(u.bytes + sent)} of ${size(u.total)}`;
+}
+$("#upstop").onclick = () => { const u = S.uploading; if (!u) return; u.stopped = true; u.list.length = 0; u.xhr && u.xhr.abort(); };
+window.addEventListener("beforeunload", e => { if (S.uploading) { e.preventDefault(); e.returnValue = ""; } });
+
+// Drops: files, and folders walked with everything in them.
+let drags = 0;
+document.addEventListener("dragenter", e => { if (!S.readOnly && [...e.dataTransfer.types].includes("Files")) { drags++; $("#drop").classList.remove("hidden"); } });
+document.addEventListener("dragleave", () => { if (--drags <= 0) { drags = 0; $("#drop").classList.add("hidden"); } });
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", async e => {
+  e.preventDefault(); drags = 0; $("#drop").classList.add("hidden");
+  if (S.readOnly) return;
+  const entries = [...e.dataTransfer.items].map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  if (!entries.length) return queue([...e.dataTransfer.files].map(f => ({ file: f, name: f.name })));
+  const out = [];
+  const walk = async (entry, prefix) => {
+    if (entry.isFile) { const f = await new Promise((res, rej) => entry.file(res, rej)); out.push({ file: f, name: prefix + f.name }); return; }
+    const reader = entry.createReader();
+    for (;;) { const batch = await new Promise((res, rej) => reader.readEntries(res, rej)); if (!batch.length) break; for (const c of batch) await walk(c, prefix + entry.name + "/"); }
+  };
+  for (const en of entries) await walk(en, "");
+  queue(out);
+});
+
+async function start() {
+  $("#app").classList.remove("hidden");
+  const st = await refreshState();
+  if (st && !st.card) notice("The card isn't there just now (is the Q2 in USB storage mode?).");
+  await load(decodeURI(location.hash.slice(1) || "/"), true);
+}
+start();
+setInterval(() => { if (!document.hidden) refreshState(); }, 30000);
+</script>
+</body>
+</html>

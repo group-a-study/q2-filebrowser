@@ -1,0 +1,79 @@
+Shanling Q2 tools
+=================
+
+The Q2 runs Linux 5.10 on an Ingenic X2000 (MIPS32r2, nan2008) with glibc 2.28 and no IPv6.
+q2-filebrowser runs from the card's .filebrowser folder as a Q2 Pod card app (q2-pod's
+patch/addon.c): Q2 Pod lists it in Streaming, turns it on from that row and shows its QR code, draws
+its page and keeps the Q2 awake while files move. Nothing is flashed for it.
+
+  build.sh     static Go for the Q2 and the card files, in target/shanlingq2/.filebrowser, zipped as
+               target/shanlingq2/q2-filebrowser-vX.Y-SHA.zip (unzip that at the card's root)
+  package.py   checks the binary (static, MIPS32 little-endian, soft-float ABI), sets the nan2008
+               ELF flag the Q2's kernel requires and Go doesn't, and writes the ZIP
+  launcher.sh  installed as .filebrowser/run: q2-filebrowser copied to /tmp and run there in a
+               restart loop
+  q2app        installed as .filebrowser/q2app: the card app manifest (name=File Browser, qr=1: its
+               row opens the QR code page once it answers)
+  test_launcher.py
+               runs launcher.sh on the host with a fake app
+
+Install
+-------
+
+Q2 Pod's System settings -> Apps installs the latest release over Wi-Fi. By hand, unzip
+q2-filebrowser-*.zip from https://github.com/group-a-study/q2-filebrowser/releases/latest to the
+card's root with the Q2 powered off. See the top-level README.md.
+
+Build
+-----
+
+  contrib/shanlingq2/build.sh [OUT]
+
+Go 1.22 or later and python3; nothing outside Go's standard library. The binary is CGO_ENABLED=0
+GOOS=linux GOARCH=mipsle GOMIPS=softfloat, static, so it needs none of the Q2's libraries. Tests
+(go test ./...): the key and PIN made once and kept, signing in by either, the PIN's lockout, X-Q2
+on a change; listing (folders first, dot files only when asked, .. kept inside the card), search; a
+download whole and by range, its sandbox, an HTML file as bytes; a ZIP of a folder and a file,
+stored, without dot files, and its name; making a folder, uploads (a folder's paths kept, a taken
+name numbered or replaced, a name that tries to climb out, past one chunk, no .q2part left),
+renaming (a case change on FAT, a taken name, a bad one), moving (numbered where taken, not into
+itself), deleting (all or none), Read Only, the card away; the Q2's page, what is moving, the hold,
+Turn Off; and stopping by itself, though not during a transfer. python3
+contrib/shanlingq2/test_launcher.py tests the launcher. A tag q2-vX.Y matching
+cmd/q2-filebrowser/main.go's version publishes the release (.github/workflows/release.yml).
+
+Device
+------
+
+Q2 Pod runs /bin/sh /mnt/mmc/.filebrowser/run when Streaming's File Browser row is pressed and it
+isn't running. The launcher copies q2-filebrowser and itself to /tmp and leaves the card at once; the
+loop restarts it after a crash, waiting 5 s and doubling to a minute, and leaves its pid in
+/tmp/q2-filebrowser. An exit of 0 (turned off from the Q2, or idle for idle_minutes) ends the loop.
+A TERM to it stops q2-filebrowser cleanly, an upload under way dropped: Q2 Pod sends it for Stop
+Streaming Services, Home's Rockbox row, an Apps update or remove, and USB storage (after which it
+starts it again; meanwhile the page says the card is away).
+
+Uploads are written aside, as a hidden .<name>.q2part beside where they go, in 512 KB chunks, each
+opened, written, synced and closed, so the card is almost never busy; the whole file is renamed into
+place once it is all there (and of the length the browser said), and a broken upload leaves nothing.
+
+  /tmp/q2-filebrowser.state
+      addr (the page's, with its port), pin, qr and qrsize (the code for the address with the key),
+      note, hold (1: keep the Q2 awake), version
+  /tmp/q2-filebrowser.sock
+      the datagram q stops it
+  /tmp/q2-filebrowser.browse.sock
+      Q2SPOT/1 (q2-pod's docs/librespot.md) for the Q2's page: menu (remote Open on Your Phone, an
+      info row, action readonly and action stop, asked again every 2 s), and the actions readonly
+      and stop
+  port 8000 (the next free one if taken)
+      the page and its API, behind the cookie: GET /api/state (version, read only, free and total
+      bytes, the card there), GET /api/list?path=&hidden=, GET /api/search?path=&q=&hidden=,
+      GET /api/file?path=&inline= (ranges), GET /api/zip?path=..., PUT
+      /api/upload?dir=&name=&overwrite= (the body is the file), and POST /api/mkdir, /api/rename,
+      /api/move, /api/delete with JSON (path, name, paths, to). POST /api/login takes the PIN;
+      /?k=KEY sets the cookie. Errors are JSON {"error": "..."} with the HTTP status: 403 read only,
+      404 not there, 409 a name taken, 503 the card away, 507 no room
+  .filebrowser/config.json
+      web_key and pin (delete them for new ones), read_only, and idle_minutes (0: never off by
+      itself); updates keep it
