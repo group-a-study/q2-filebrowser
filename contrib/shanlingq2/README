@@ -14,6 +14,9 @@ its page and keeps the Q2 awake while files move. Nothing is flashed for it.
                restart loop
   q2app        installed as .filebrowser/q2app: the card app manifest (name=File Browser, qr=1: its
                row opens the QR code page once it answers)
+  icon.png, icon-40.png
+               installed beside it: Streaming's row icon, 52 px (Legacy) and 40 px (iPod), a
+               folder in white on amber, in Q2 Pod's style
   test_launcher.py
                runs launcher.sh on the host with a fake app
 

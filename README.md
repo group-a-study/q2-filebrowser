@@ -10,10 +10,10 @@ A file manager for the **Shanling Q2** running [Q2 Pod](https://github.com/Diamo
 
 1. Download `q2-filebrowser-*.zip` from the [latest release](https://github.com/group-a-study/q2-filebrowser/releases/latest).
 2. Power the Q2 off, then put its microSD card in your computer.
-3. Unzip the file to the card's root, so the card has `.filebrowser/q2-filebrowser`, `.filebrowser/run` and `.filebrowser/q2app`. The leading dot hides the folder on macOS (Cmd+Shift+. in Finder shows it) and Linux.
+3. Unzip the file to the card's root, so the card has `.filebrowser/q2-filebrowser`, `.filebrowser/run`, `.filebrowser/q2app` and its icons `.filebrowser/icon.png` and `.filebrowser/icon-40.png`. The leading dot hides the folder on macOS (Cmd+Shift+. in Finder shows it) and Linux.
 4. Eject the card, put it back in the Q2 and power it on.
 
-File Browser then has a row in **Streaming**.
+File Browser then has a row in **Streaming**, with its logo.
 
 ## Use
 
@@ -34,7 +34,7 @@ The key in the QR code and the PIN are made once and kept, so a phone stays sign
 
 ## Update and remove
 
-**System settings → Apps** shows **Update** when a newer release is out. By hand, replace `.filebrowser/q2-filebrowser`, `.filebrowser/run` and `.filebrowser/q2app`. Either way `.filebrowser/config.json` (the key, PIN, Read Only and idle time) is kept. Delete `web_key` and `pin` from it for new ones.
+**System settings → Apps** shows **Update** when a newer release is out. By hand, replace `.filebrowser/q2-filebrowser`, `.filebrowser/run`, `.filebrowser/q2app`, `.filebrowser/icon.png` and `.filebrowser/icon-40.png`. Either way `.filebrowser/config.json` (the key, PIN, Read Only and idle time) is kept. Delete `web_key` and `pin` from it for new ones.
 
 To remove it, press **File Browser** twice in **System settings → Apps**, or delete `.filebrowser`.
 
