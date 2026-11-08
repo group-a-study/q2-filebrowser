@@ -1,7 +1,8 @@
 // q2-filebrowser is a Q2 Pod card app (contrib/shanlingq2/README), after KOReader's Filebrowser
 // plugin: turned on from the Q2, it serves a file manager for the card to a phone or computer on
 // the same Wi-Fi, opened from the QR code (or the address and PIN) the Q2 shows. Browse, upload
-// files and folders, download (a folder as a ZIP), play, rename, move and delete; turned off from
+// files and folders, download (a folder as a ZIP), play, rename, move, delete and edit songs' tags
+// (also from the Q2's own page); turned off from
 // the Q2, or by itself once unused. It runs from the card's .filebrowser folder (copied to /tmp
 // first, so the card is never kept busy) and draws the Q2's File Browser page over Q2SPOT/1.
 package main
@@ -23,9 +24,10 @@ import (
 	"github.com/group-a-study/q2-filebrowser/internal/q2"
 	"github.com/group-a-study/q2-filebrowser/internal/q2spot"
 	"github.com/group-a-study/q2-filebrowser/internal/qr"
+	"github.com/group-a-study/q2-filebrowser/internal/tags"
 )
 
-const version = "q2-v1.2"
+const version = "q2-v1.3"
 
 // settings is .filebrowser/config.json.
 type settings struct {
@@ -155,6 +157,7 @@ func start(o options) (*app, error) {
 	a := &app{opts: o, state: &q2.State{Path: o.statusFile}, used: time.Now(), webAt: time.Now(), quit: make(chan struct{})}
 	a.set = loadSettings(o.dir)
 	a.files = &files{root: o.card}
+	tags.Stopping = a.files.stopped
 	if a.ln, a.port = listen(o.port); a.ln == nil {
 		return nil, fmt.Errorf("no port for the page from %d", o.port)
 	}
@@ -187,6 +190,15 @@ func (a *app) run() {
 		case <-a.quit:
 			a.ln.Close()
 			a.files.cancel() // uploads under way end, their .part files gone
+			// A song being written in place is let finish; one being written again gives up, the
+			// song as it was. Q2 Pod waits 3 s for an app to go.
+			saved := make(chan struct{})
+			go func() { a.files.writers.Wait(); close(saved) }()
+			select {
+			case <-saved:
+			case <-time.After(2500 * time.Millisecond):
+				log.Printf("stopping with a tag save under way")
+			}
 			a.state.Remove()
 			os.Remove(a.opts.browse)
 			os.Remove(a.opts.control)

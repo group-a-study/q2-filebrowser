@@ -13,7 +13,8 @@ its page and keeps the Q2 awake while files move. Nothing is flashed for it.
   launcher.sh  installed as .filebrowser/run: q2-filebrowser copied to /tmp and run there in a
                restart loop
   q2app        installed as .filebrowser/q2app: the card app manifest (name=File Browser, qr=1: its
-               row opens the QR code page once it answers)
+               row opens the QR code page once it answers; search= is the Q2 keyboard's hint, which
+               Edit Tags uses to type a value)
   icon.png, icon-40.png
                installed beside it: Streaming's row icon, 52 px (Legacy) and 40 px (iPod), a
                folder in white on amber, in Q2 Pod's style
@@ -41,7 +42,12 @@ stored, without dot files, and its name; making a folder, uploads (a folder's pa
 name numbered or replaced, a name that tries to climb out, past one chunk, no .q2part left),
 renaming (a case change on FAT, a taken name, a bad one), moving (numbered where taken, not into
 itself), deleting (all or none), Read Only, the card away; the Q2's page, what is moving, the hold,
-Turn Off; and stopping by itself, though not during a transfer. python3
+Turn Off; and stopping by itself, though not during a transfer. Tags (internal/tags, each format
+against fixtures built in the test: fields, encodings, in place and written again, covers, the audio
+byte for byte, what else the file holds kept, damaged files refused); the tag API (one song, several,
+a folder, numbering, covers, Read Only, X-Q2, the card away, paths outside the card, the library
+request); and the Q2's Edit Tags levels (rows and contexts within the firmware's limits, paging, the
+edit target, previews that write nothing, saves, Save for All, songs playing). python3
 contrib/shanlingq2/test_launcher.py tests the launcher. A tag q2-vX.Y matching
 cmd/q2-filebrowser/main.go's version publishes the release (.github/workflows/release.yml).
 
@@ -66,17 +72,33 @@ place once it is all there (and of the length the browser said), and a broken up
   /tmp/q2-filebrowser.sock
       the datagram q stops it
   /tmp/q2-filebrowser.browse.sock
-      Q2SPOT/1 (q2-pod's docs/librespot.md) for the Q2's page: menu (remote Open on Your Phone, an
-      info row, action readonly and action stop, asked again every 2 s), and the actions readonly
-      and stop
+      Q2SPOT/1 (q2-pod's docs/librespot.md) for the Q2's page: menu (remote Open on Your Phone, list
+      tags Edit Tags, an info row, action readonly and action stop, asked again every 2 s), and the
+      actions readonly and stop. Edit Tags (devtags.go): the levels tags <folder> [cursor] (songs
+      playing, Find a Song and Update Library at the root, then folders and songs, paged 50 at a
+      time), song <path> (its fields), field <field>|<path> (values to pick, and the keyboard; it sets
+      the edit target) and search <text> [cursor] (a preview of the edit target with Save, else songs
+      by name); the actions set <field>|<path>|<value>, setdir <field>|<folder>|<value>, setid <n> (a
+      context too long for the Q2, kept here) and library. Only actions write; Read Only refuses them
+  /tmp/q2-addon.caps, /tmp/q2-filebrowser.library
+      Q2 Pod lists "library" in the first when it takes an app's request to update the library;
+      Update Library writes the second whole: a new number, then "scan"
   port 8000 (the next free one if taken)
       the page and its API, behind the cookie: GET /api/state (version, read only, free and total
       bytes, the card there), GET /api/list?path=&hidden=, GET /api/search?path=&q=&hidden=,
       GET /api/file?path=&inline= (ranges), GET /api/zip?path=..., PUT
       /api/upload?dir=&name=&overwrite= (the body is the file), and POST /api/mkdir, /api/rename,
       /api/move, /api/delete with JSON (path, name, paths, to). POST /api/login takes the PIN;
-      /?k=KEY sets the cookie. Errors are JSON {"error": "..."} with the HTTP status: 403 read only,
-      404 not there, 409 a name taken, 503 the card away, 507 no room
+      /?k=KEY sets the cookie. Tags: GET /api/tags?path=... (songs, or a folder for its songs; up to
+      500: each one's format, writable, fields, picture and notes, or its error), GET /api/cover?path=
+      (the embedded cover, sandboxed), POST /api/tags with JSON (paths, set {field: value, "" to
+      clear}, picture as a data: URL or remove_picture, number to set tracks 1..N in the order sent;
+      up to 6 MB; answered with saved and failed, each failure with its error and code) and POST
+      /api/library (asks the Q2 to update its library, answered {"ok":true,"later":bool}: later when
+      tags are being saved, and it is asked once they are; 501 when this Q2 Pod can't be asked). GET
+      /api/state also says tags, library (whether it can be asked) and tag_exts. Errors are JSON
+      {"error": "..."} with the HTTP status: 403 read only, 404 not there, 409 a name taken, 413 too
+      big, 415 not a song File Browser can tag, 503 the card away, 507 no room
   .filebrowser/config.json
       web_key and pin (delete them for new ones), read_only, and idle_minutes (0: never off by
       itself); updates keep it

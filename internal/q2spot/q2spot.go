@@ -5,6 +5,7 @@ package q2spot
 
 import (
 	"errors"
+	"log"
 	"net"
 	"os"
 	"strings"
@@ -222,9 +223,21 @@ func answer(c net.Conn, h Handler) {
 	if err != nil {
 		out, _ = Fail(Bad, "Bad request").Encode(firstField(buf))
 	} else {
-		out, _ = h(req).Encode(req.ID)
+		out = call(h, req)
 	}
 	c.Write(out)
+}
+
+// call is h's reply to req; a handler that panics answers an error instead of taking the add-on down.
+func call(h Handler, req Request) (out []byte) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("q2spot %s: %v", req.Op, r)
+			out, _ = Fail(Error, "Something went wrong").Encode(req.ID)
+		}
+	}()
+	out, _ = h(req).Encode(req.ID)
+	return out
 }
 
 // firstField is a malformed request's id, if it has a readable one, so the client can match the reply.

@@ -16,7 +16,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-text-size-adjust: 100%; }
-button, input { font: inherit; color: inherit; }
+button, input, textarea, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:disabled { opacity: .45; cursor: default; }
 .hidden { display: none !important; }
@@ -111,6 +111,44 @@ ul.list { list-style: none; margin: 8px 0 0; padding: 0; }
 .login p { color: var(--muted); }
 .drop { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .5); display: grid; place-items: center; pointer-events: none; }
 .drop div { background: var(--panel); border: 2px dashed var(--accent); border-radius: 18px; padding: 32px 40px; font-weight: 650; font-size: 18px; }
+.sheet:focus { outline: none; }
+.sheet.tagsheet { max-width: 560px; display: flex; flex-direction: column; overflow: hidden; }
+.tagform { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.tagform .body { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; margin: 0 -16px; padding: 4px 16px 8px; }
+.tagform fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.tagform .field { font-size: 16px; }
+.tagform .field[readonly] { background: transparent; }
+.tagform .field:disabled { opacity: .6; }
+.tagform textarea.field { resize: vertical; min-height: 140px; display: block; }
+.tagform .err { white-space: pre-line; }
+.tagform .btns { margin: 0 -16px; padding: 12px 16px 0; border-top: 1px solid var(--line); align-items: center; flex-wrap: nowrap; }
+.tagform .prog { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
+.tagform .prog .bar { margin-top: 6px; }
+.tags { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 8px 12px; align-items: center; }
+.tags > label { color: var(--muted); font-size: 13px; font-weight: 600; }
+.tags .pair { display: flex; align-items: center; gap: 8px; }
+.tags .pair .field { flex: 1; min-width: 0; }
+.tags .pair span { color: var(--muted); font-size: 13px; }
+.tags .help { grid-column: 2; margin-top: -4px; }
+.help { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.link { border: 0; background: none; padding: 6px 0; color: var(--accent); font-size: 13px; font-weight: 650; }
+@media (max-width: 480px) { .tags { grid-template-columns: minmax(0, 1fr); gap: 4px; } .tags > label { margin-top: 8px; } .tags .help { grid-column: 1; margin-top: 0; } }
+.cover { display: flex; gap: 14px; align-items: center; margin: 0 0 12px; }
+.cover .art { width: 88px; height: 88px; border-radius: 12px; background: var(--panel2); flex: none; display: grid; place-items: center; overflow: hidden; }
+.cover .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover .art svg { width: 34px; height: 34px; fill: var(--muted); }
+.cover .what { flex: 1; min-width: 0; }
+.cover .what .sub { margin: 0; }
+.cover label { display: flex; gap: 8px; align-items: center; font-size: 13px; padding: 4px 0; }
+.tagnotes { margin: 0 0 12px; padding: 0 0 0 18px; color: var(--muted); font-size: 13px; }
+.tagnotes li + li { margin-top: 2px; }
+.order { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.order summary { cursor: pointer; padding: 4px 0; }
+.order ol, .order ul { margin: 4px 0 0; padding-left: 24px; max-height: 30vh; overflow: auto; }
+.libbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.libbar .txt { flex: 1; min-width: 0; }
+.libbar .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+@media (max-width: 560px) { .libbar .txt { flex-basis: calc(100% - 42px); } .libbar .x { order: 1; } .libbar .btn { order: 2; margin-left: auto; } }
 #toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 30; background: var(--text); color: var(--bg);
   padding: 10px 16px; border-radius: 12px; font-size: 14px; box-shadow: var(--shadow); max-width: calc(100% - 32px); }
 </style>
@@ -137,6 +175,7 @@ ul.list { list-style: none; margin: 8px 0 0; padding: 0; }
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
   <symbol id="i-eye" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9a2 2 0 0 0 2.82 0l7-7a2 2 0 0 0 0-2.84zM5.5 7a1.5 1.5 0 1 1 0-3 1.5 1.5 0 1 1 0 3z"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.3 7.3 0 0 0 1.7 1L11 21h4l.4-2.9a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.5-2.2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></symbol>
 </svg>
 
@@ -172,6 +211,11 @@ ul.list { list-style: none; margin: 8px 0 0; padding: 0; }
 </main>
 
 <div class="dock" id="dock">
+  <div class="libbar hidden" id="libbar">
+    <div class="txt"><b>To see the changes in the Library, update it</b><div class="sub" id="libhow">On the Q2: Library → Update Local Music</div></div>
+    <button class="btn primary" id="libgo">Update library</button>
+    <button class="x" id="libclose" title="Close" aria-label="Close the library note"><svg><use href="#i-x"/></svg></button>
+  </div>
   <div class="ups hidden" id="ups">
     <div class="head"><b id="upname"></b><button class="x" id="upstop" title="Stop" aria-label="Stop uploading"><svg><use href="#i-x"/></svg></button></div>
     <div class="bar"><i id="upbar"></i></div>
@@ -180,6 +224,7 @@ ul.list { list-style: none; margin: 8px 0 0; padding: 0; }
   <div class="selbar hidden" id="selbar">
     <b id="selcount"></b>
     <button class="btn" id="seldl"><svg><use href="#i-down"/></svg>Download</button>
+    <button class="btn hidden" id="seltag"><svg><use href="#i-tag"/></svg>Tags</button>
     <button class="btn can-change" id="selmv"><svg><use href="#i-move"/></svg>Move</button>
     <button class="btn danger can-change" id="selrm"><svg><use href="#i-trash"/></svg>Delete</button>
     <button class="x" id="seldone" title="Done" aria-label="Done selecting"><svg><use href="#i-x"/></svg></button>
@@ -213,7 +258,8 @@ const store = { get(k, d) { try { const v = localStorage.getItem("q2fb." + k); r
   set(k, v) { try { localStorage.setItem("q2fb." + k, JSON.stringify(v)); } catch {} } };
 
 const S = { path: "/", entries: [], sel: new Set(), selecting: false, sort: store.get("sort", "name"), desc: store.get("desc", false),
-  hidden: store.get("hidden", false), readOnly: false, searching: "", found: null, uploading: null, view: [], anchor: null };
+  hidden: store.get("hidden", false), readOnly: false, searching: "", found: null, uploading: null, view: [], anchor: null,
+  tags: false, tagExts: [], library: false };
 
 function size(n) {
   if (n >= 1 << 30) return (n / (1 << 30)).toFixed(1) + " GB";
@@ -236,6 +282,8 @@ const KIND = { audio: "mp3 flac m4a m4b aac ogg opus oga wav aif aiff ape wv dsf
   text: "txt cue lrc m3u m3u8 log ini json md nfo".split(" "), book: "epub pdf mobi azw3 fb2 cbz".split(" "), zip: "zip rar 7z tar gz".split(" ") };
 function kind(e) { if (e.dir) return "folder"; const x = ext(e.name); for (const k in KIND) if (KIND[k].includes(x)) return k; return "file"; }
 const playable = e => kind(e) === "audio" && ["mp3", "flac", "m4a", "m4b", "aac", "ogg", "opus", "oga", "wav"].includes(ext(e.name));
+// taggable is whether the tag editor takes the file e (the server says which kinds).
+const taggable = e => S.tags && !e.dir && !e.name.startsWith(".") && S.tagExts.includes(ext(e.name));
 
 let toastTimer;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add("hidden"), 3200); }
@@ -266,9 +314,11 @@ async function refreshState() {
   try {
     const st = await api("state");
     S.readOnly = st.read_only;
+    S.tags = !!st.tags; S.library = !!st.library; S.tagExts = (st.tag_exts || []).map(x => x.replace(/^\./, "").toLowerCase());
     document.body.classList.toggle("ro", st.read_only);
     $("#ro").classList.toggle("hidden", !st.read_only);
     document.querySelectorAll(".can-change").forEach(b => b.classList.toggle("hidden", st.read_only));
+    selbar();
     if (st.total > 0) { $("#used").style.width = ((st.total - st.free) / st.total * 100).toFixed(1) + "%"; $("#room").textContent = size(st.free) + " free of " + size(st.total); }
     return st;
   } catch (err) { return null; }
@@ -354,10 +404,18 @@ function selbar() {
   $("#selbar").classList.toggle("hidden", !S.selecting);
   $("#selcount").textContent = S.sel.size ? S.sel.size + " chosen" : mouse.matches ? "Click to choose, Shift-click for a range" : "Tap to choose";
   for (const b of ["#seldl", "#selmv", "#selrm"]) $(b).disabled = !S.sel.size;
+  $("#seltag").classList.toggle("hidden", !S.tags);
+  $("#seltag").disabled = !tagPaths().length;
+}
+// tagPaths are the chosen songs and folders, for Tags.
+function tagPaths() {
+  const by = new Map(S.entries.concat(S.found || []).map(e => [e.path || join(S.path, e.name), e]));
+  return [...S.sel].filter(p => { const e = by.get(p); return e && (e.dir || taggable(e)); });
 }
 $("#selmode").onclick = () => { S.selecting = !S.selecting; S.sel.clear(); S.anchor = null; render(); };
 $("#seldone").onclick = unselect;
 $("#seldl").onclick = () => download([...S.sel]);
+$("#seltag").onclick = () => tagDialog(tagPaths());
 $("#selmv").onclick = () => moveDialog([...S.sel]);
 $("#selrm").onclick = () => removeDialog([...S.sel]);
 const ORDERS = [["name", false, "Name, A to Z"], ["name", true, "Name, Z to A"], ["date", true, "Newest first"],
@@ -392,7 +450,9 @@ function modal(...kids) {
   m.append(scrim);
   return sh;
 }
-function close() { $("#modal").textContent = ""; }
+// closeGuard, when it says so, keeps the dialog open (tags being saved).
+let closeGuard = null;
+function close() { if (closeGuard && closeGuard()) return; $("#modal").textContent = ""; }
 // Escape closes a dialog, else ends Select; Ctrl- or Cmd-A chooses every row shown (not while typing).
 document.addEventListener("keydown", e => {
   const open = $("#modal").childElementCount > 0;
@@ -415,6 +475,7 @@ function sheet(e, p) {
   if (k === "image" || k === "video" || ext(e.name) === "pdf") act("eye", "Open in a new tab", () => window.open(fileURL(p, true), "_blank", "noopener"));
   act("down", e.dir ? "Download as ZIP" : "Download", () => download([p]));
   if (S.found) act("folder", "Show in its folder", () => load(parent(p)));
+  if (taggable(e) || (S.tags && e.dir)) act("tag", (S.readOnly ? "Show tags" : "Edit tags") + (e.dir ? " of its songs" : ""), () => tagDialog([p]));
   if (!S.readOnly) {
     act("edit", "Rename", () => renameDialog(e, p));
     act("move", "Move", () => moveDialog([p]));
@@ -499,6 +560,306 @@ async function moveDialog(paths) {
       if (name) api("mkdir", { method: "POST", body: { path: join(at, name.trim()) } }).then(() => show(at), e => err.textContent = e.message);
     } }), el("button", { class: "btn", text: "Cancel", onclick: close }), go));
   show(at);
+}
+
+// Tags. One song's are edited in a sheet; several songs' (a folder's, or those chosen) together, where a
+// field whose values differ shows empty, keeping each song's, and changes only if typed in. Songs are
+// saved one at a time, so the sheet can say how far it has got. A new cover is made a JPEG of at most
+// 1000 px first: what the Q2 shows best, and quick to send.
+const TAGS = { title: "Title", artist: "Artist", album: "Album", albumartist: "Album artist", track: "Track", tracktotal: "Number of tracks",
+  disc: "Disc", disctotal: "Number of discs", date: "Year", genre: "Genre", composer: "Composer", comment: "Comment", lyrics: "Lyrics" };
+const GENRES = ["Alternative", "Ambient", "Audiobook", "Blues", "Classical", "Country", "Dance", "Electronic", "Folk", "Funk", "Hip-Hop",
+  "House", "Indie", "Jazz", "Latin", "Metal", "Pop", "Punk", "R&B", "Rap", "Reggae", "Rock", "Soul", "Soundtrack", "Spoken Word", "Techno", "World"];
+const natural = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+// fromName is a title made of a file name: no extension, no track number in front, _ as spaces.
+function fromName(n) {
+  const t = n.replace(/\.[^.]+$/, "");
+  const s = t.replace(/^\s*\d{1,3}(?:[-.]\d{1,3})?(?:\s*[-.)_]\s*|\s+)(?=\S)/, "") || t;
+  return (/\s/.test(s) ? s : s.replace(/_/g, " ")).trim();
+}
+// tagValue is v as the server keeps it in the field k (tags.Clean): no NULs or byte order marks;
+// lyrics with LF line ends and nothing blank at the end; anything else on one line and trimmed, a
+// number without zeros in front. A field is changed when this differs from what it showed at first.
+function tagValue(k, v) {
+  v = v.replace(/[\0\uFEFF]/g, "");
+  if (k === "lyrics") return v.replace(/\r\n?/g, "\n").replace(/[\n ]+$/, "");
+  v = v.replace(/\r\n|[\r\n]/g, " ").replace(/^[\s\u0085]+|[\s\u0085]+$/g, "");
+  return ["track", "tracktotal", "disc", "disctotal"].includes(k) ? v.replace(/^0+/, "") : v;
+}
+// picKind names a cover's kind from its MIME type: the Q2 shows a JPEG or a PNG, no other.
+function picKind(m) {
+  return { "image/jpeg": "JPEG", "image/png": "PNG", "image/gif": "GIF", "image/bmp": "BMP", "image/x-ms-bmp": "BMP", "image/webp": "WebP",
+    "image/tiff": "TIFF", "image/heic": "HEIC", "image/avif": "AVIF" }[m] || "unknown kind of picture";
+}
+// trap keeps Tab's focus inside the sheet sh.
+function trap(sh) {
+  sh.addEventListener("keydown", e => {
+    if (e.key !== "Tab") return;
+    const all = [...sh.querySelectorAll("button, input, textarea, summary")].filter(x => !x.matches(":disabled") && x.offsetParent !== null);
+    if (!all.length) return;
+    const i = all.indexOf(document.activeElement);
+    if (e.shiftKey ? i <= 0 : i < 0 || i === all.length - 1) { e.preventDefault(); all[e.shiftKey ? all.length - 1 : 0].focus(); }
+  });
+}
+// jpeg is a picked picture as a baseline JPEG at most 1000 px a side, on white where it was see-through.
+async function jpeg(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    if (!img.naturalWidth || !img.naturalHeight) throw new Error("no size");
+    const k = Math.min(1, 1000 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = el("canvas", { width: Math.max(1, Math.round(img.naturalWidth * k)), height: Math.max(1, Math.round(img.naturalHeight * k)) });
+    const g = c.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(res => c.toBlob(res, "image/jpeg", 0.88));
+    if (!blob) throw new Error("no JPEG");
+    const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); });
+    return { data, blob, mime: "image/jpeg", width: c.width, height: c.height, size: blob.size };
+  } finally { URL.revokeObjectURL(url); }
+}
+// coverFiles saves blob as cover.jpg in each of dirs, replacing one there.
+async function coverFiles(dirs, blob) {
+  for (const dir of dirs) {
+    let r;
+    try { r = await fetch("/api/upload?" + new URLSearchParams({ dir, name: "cover.jpg", overwrite: "1" }), { method: "PUT", headers: { "X-Q2": "1" }, body: blob }); }
+    catch { throw new ApiError("The Q2 can't be reached", 0); }
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new ApiError(j.error || r.statusText, r.status); }
+  }
+}
+// libraryBanner says the Library shows the tags as they were when it was last updated, and offers to
+// update it when this Q2 Pod takes the request.
+function libraryBanner() {
+  const can = S.library && !S.readOnly;
+  $("#libgo").classList.toggle("hidden", !can); $("#libhow").classList.toggle("hidden", can);
+  $("#libbar").classList.remove("hidden");
+}
+// libraryAsked is what the page says once the Q2 has been asked to update its library (the reply r):
+// while tags are being saved (a Save for All on the Q2, say), it waits for them too.
+function libraryAsked(r) {
+  return r && r.later ? "Asked the Q2: the library updates once the tags are saved and nothing is playing"
+    : "Asked the Q2: it updates the library once nothing is playing";
+}
+$("#libclose").onclick = () => $("#libbar").classList.add("hidden");
+$("#libgo").onclick = async () => {
+  const b = $("#libgo"); b.disabled = true;
+  try { const r = await api("library", { method: "POST" }); $("#libbar").classList.add("hidden"); toast(libraryAsked(r)); }
+  catch (err) { toast(err.message); }
+  finally { b.disabled = false; }
+};
+
+async function tagDialog(paths) {
+  const head = el("h2", { id: "taghead", text: paths.length === 1 ? base(paths[0]) || "Card" : paths.length + " items" });
+  const sub = el("p", { class: "sub", text: "Reading the tags…" });
+  const sh = modal(head, sub);
+  sh.classList.add("tagsheet"); sh.setAttribute("aria-labelledby", "taghead"); sh.tabIndex = -1; sh.focus();
+  trap(sh);
+  const closer = () => el("div", { class: "btns" }, el("button", { class: "btn", text: "Close", onclick: close }));
+  let files;
+  try { files = (await api("tags", { query: { path: paths } })).files || []; }
+  catch (err) { if (sh.isConnected) { sub.textContent = err.message; sh.append(closer()); } return; }
+  if (!sh.isConnected) return;
+  const read = files.filter(f => !f.error), songs = read.filter(f => f.writable);
+  const ro = S.readOnly || !songs.length, shown = (ro ? read : songs).sort((a, b) => natural(a.path, b.path));
+  const n = shown.length, one = n === 1, skipped = files.filter(f => !shown.includes(f));
+  if (one && files.length > 1) {
+    // Several songs' tags come without their lyrics: the one song shown is asked for by itself.
+    let f;
+    try { f = (await api("tags", { query: { path: [shown[0].path] } })).files[0]; }
+    catch (err) { if (sh.isConnected) { sub.textContent = err.message; sh.append(closer()); } return; }
+    if (!sh.isConnected) return;
+    if (!f || f.error) { sub.textContent = f ? f.error : "Its tags couldn't be read."; sh.append(closer()); return; }
+    shown[0] = f;
+  }
+  const dirs = [...new Set(shown.map(f => parent(f.path)))];
+  const notes = [...new Set(shown.flatMap(f => f.notes || []))];
+  if (S.readOnly) notes.unshift("Read only: allow changes on the Q2 (Streaming → File Browser) to edit tags");
+  else if (ro && n) notes.unshift((one ? "Its" : "Their") + " tags can be read here, not changed");
+  for (const f of skipped.slice(0, 12)) notes.push(f.name + ": " + (f.error || "its tags can be read here, not changed"));
+  if (skipped.length > 12) notes.push(`And ${skipped.length - 12} more not shown`);
+  const noteList = notes.length ? el("ul", { class: "tagnotes" }, ...notes.map(t => el("li", { text: t }))) : null;
+  if (!n) {
+    sub.textContent = files.length ? "None of these can be read here." : "No songs here to tag.";
+    sh.append(el("div", { class: "tagform" }, el("div", { class: "body" }, noteList), closer()));
+    return;
+  }
+  head.textContent = one ? shown[0].name : n + " songs";
+  sub.textContent = [...new Set(shown.map(f => f.format))].join(", ") + " · " + (dirs.length === 1 ? where(dirs[0]) : dirs.length + " folders");
+
+  // The fields: each shows the songs' value, or nothing when theirs differ. orig is what each showed
+  // at first (the browser's own way: a textarea makes CR line ends LF) as the server would keep it.
+  const inputs = {}, init = {}, mixed = {}, orig = {};
+  const input = (k, props = {}) => {
+    const vals = shown.map(f => (f.fields || {})[k] || "");
+    mixed[k] = vals.some(v => tagValue(k, v) !== tagValue(k, vals[0])); init[k] = mixed[k] ? "" : vals[0];
+    const i = el(k === "lyrics" ? "textarea" : "input", { class: "field", id: "tag-" + k, name: k, autocomplete: "off", ...props });
+    i.value = init[k]; orig[k] = tagValue(k, i.value); i.readOnly = ro;
+    if (mixed[k]) i.placeholder = ro ? "Differs from song to song" : "Keep each song's";
+    return inputs[k] = i;
+  };
+  const label = k => el("label", { for: "tag-" + k, text: TAGS[k] });
+  const words = { autocapitalize: "words", spellcheck: "false" };
+  const number = (k, props) => input(k, { inputmode: "numeric", maxlength: "4", ...props });
+  const pair = (a, b) => el("div", { class: "pair" }, number(a), el("span", { text: "of", "aria-hidden": "true" }), number(b, { "aria-label": TAGS[b] }));
+  let numbering = false, titles = false;
+  const order = el("details", { class: "order hidden" });
+  const showOrder = () => {
+    order.classList.toggle("hidden", !numbering && !titles); order.textContent = "";
+    order.append(el("summary", { text: numbering ? "In this order" : "The titles" }),
+      el(numbering ? "ol" : "ul", {}, ...shown.map(f => el("li", { text: f.name + (titles ? " → " + fromName(f.name) : "") }))));
+  };
+  const grid = el("div", { class: "tags" }, label("title"), input("title", words));
+  if (!one) inputs.title.disabled = true;
+  if (!ro) {
+    const b = el("button", { type: "button", class: "link", text: one ? "Title from file name" : "Titles from file names" });
+    b.onclick = () => {
+      if (one) { inputs.title.value = fromName(shown[0].name); return; }
+      titles = !titles;
+      inputs.title.value = titles ? "" : init.title;
+      inputs.title.placeholder = titles ? "Each from its file's name" : mixed.title ? "Keep each song's" : "";
+      b.textContent = titles ? "Keep the titles" : "Titles from file names";
+      showOrder();
+    };
+    grid.append(el("div", { class: "help" }, b));
+  }
+  grid.append(label("artist"), input("artist", words), label("album"), input("album", words),
+    label("albumartist"), input("albumartist", words), label("track"), pair("track", "tracktotal"));
+  if (!ro && !one) {
+    const by = `Number tracks 1–${n} by name`, b = el("button", { type: "button", class: "link", text: by });
+    b.onclick = () => {
+      numbering = !numbering;
+      const tr = inputs.track, tt = inputs.tracktotal;
+      tr.disabled = numbering; tr.value = numbering ? "" : init.track;
+      tr.placeholder = numbering ? `1–${n} by name` : mixed.track ? "Keep each song's" : "";
+      tt.value = numbering ? String(n) : init.tracktotal;
+      b.textContent = numbering ? "Don't number them" : by;
+      showOrder();
+    };
+    grid.append(el("div", { class: "help" }, b));
+  }
+  const seen = shown.map(f => (f.fields || {}).genre).filter(Boolean);
+  const genres = el("datalist", { id: "tag-genres" }, ...[...new Set([...seen, ...GENRES])].map(g => el("option", { value: g })));
+  grid.append(label("disc"), pair("disc", "disctotal"), label("date"), input("date", { spellcheck: "false" }),
+    label("genre"), input("genre", { list: "tag-genres", ...words }), label("composer"), input("composer", words),
+    label("comment"), input("comment"));
+  if (one) grid.append(label("lyrics"), input("lyrics", { rows: "8" }));
+
+  // The cover: the songs' own (when they share one), a new one picked, or none.
+  const pics = shown.map(f => f.picture || null), has = pics.some(Boolean);
+  const same = pics.every(p => JSON.stringify(p) === JSON.stringify(pics[0]));
+  let pic = { mode: "keep" };
+  const art = el("div", { class: "art" }), what = el("p", { class: "sub" });
+  const pick = el("input", { type: "file", accept: "image/*", hidden: "" });
+  const change = el("button", { type: "button", class: "link", text: "Change…", onclick: () => pick.click() });
+  const remove = el("button", { type: "button", class: "link", text: "Remove", onclick: () => { pic = { mode: "remove" }; drawCover(); } });
+  const undo = el("button", { type: "button", class: "link", text: "Undo", onclick: () => { pic = { mode: "keep" }; drawCover(); } });
+  const also = el("input", { type: "checkbox", id: "tag-also" });
+  also.checked = store.get("coverjpg", false); also.onchange = () => store.set("coverjpg", also.checked);
+  const alsoRow = el("label", { for: "tag-also" }, also, el("span", { text: "Also save as cover.jpg in " + (dirs.length > 1 ? "their folders" : "the folder") }));
+  const picText = p => (p.width ? p.width + "×" + p.height + " " : "") + picKind(p.mime) + ", " + size(p.size);
+  const drawCover = () => {
+    let src = null, text;
+    if (pic.mode === "new") { src = pic.data; text = "New cover: " + picText(pic); }
+    else if (pic.mode === "remove") text = one ? "No cover once saved" : "No covers once saved";
+    else if (!has) text = "No cover";
+    else if (same) { src = "/api/cover?" + new URLSearchParams({ path: shown[0].path }); text = "Cover: " + picText(pics[0]) + (one ? "" : ", the same on all " + n); }
+    else text = "Covers differ: each song keeps its own";
+    art.textContent = "";
+    if (src) { const img = el("img", { src, alt: "Cover" }); img.onerror = () => { art.textContent = ""; art.append(icon("image")); }; art.append(img); }
+    else art.append(icon("image"));
+    what.textContent = text;
+    change.classList.toggle("hidden", ro);
+    remove.classList.toggle("hidden", ro || pic.mode === "remove" || (pic.mode === "keep" && !has));
+    undo.classList.toggle("hidden", pic.mode === "keep");
+    alsoRow.classList.toggle("hidden", pic.mode !== "new");
+  };
+  pick.onchange = async () => {
+    const file = pick.files[0]; pick.value = "";
+    if (!file) return;
+    what.textContent = "Getting the picture ready…";
+    try { pic = { mode: "new", ...await jpeg(file) }; err.textContent = ""; }
+    catch { err.textContent = "That picture couldn't be read: try a JPEG or a PNG"; }
+    drawCover();
+  };
+  const cover = el("div", { class: "cover" }, art, el("div", { class: "what" }, what, el("div", { class: "help" }, change, remove, undo), alsoRow));
+
+  const err = el("div", { class: "err", role: "alert" }), prog = el("div", { class: "prog", role: "status" });
+  const go = el("button", { class: "btn primary", text: "Save" });
+  const cancel = el("button", { type: "button", class: "btn", text: ro ? "Close" : "Cancel" });
+  const fs = el("fieldset", {}, cover, noteList, grid, order, genres);
+  const form = el("form", { class: "tagform" }, el("div", { class: "body" }, fs, err), el("div", { class: "btns" }, prog, cancel, ro ? null : go));
+  sh.append(form, pick);
+  drawCover();
+
+  // Saving: the fields changed (a field whose values differ only if typed in), song by song.
+  // Escape or a tap outside asks first when there are edits (Escape also dismisses a field's
+  // suggestions, so it is easily pressed); Cancel and a finished save close at once.
+  let saving = false, stopped = false, todo = shown, done = false;
+  const edited = () => !ro && (Object.keys(changes()).length > 0 || pic.mode !== "keep" || numbering || titles);
+  closeGuard = () => sh.isConnected && (saving || !done && edited() && !confirm("Leave without saving your changes?"));
+  cancel.onclick = () => { if (saving) { stopped = true; cancel.disabled = true; } else { done = true; close(); } };
+  form.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !ro) { e.preventDefault(); go.click(); } });
+  const changes = () => {
+    const set = {};
+    for (const [k, i] of Object.entries(inputs)) {
+      if (i.disabled) continue;
+      const v = tagValue(k, i.value);
+      if (mixed[k] ? v !== "" : v !== orig[k]) set[k] = v;
+    }
+    return set;
+  };
+  form.onsubmit = async ev => {
+    ev.preventDefault();
+    if (ro || saving) return;
+    const set = changes();
+    for (const k of ["track", "tracktotal", "disc", "disctotal"])
+      if (set[k] && !/^\d{1,4}$/.test(set[k])) { err.textContent = TAGS[k] + " must be a number"; inputs[k].focus(); return; }
+    if (numbering) set.tracktotal = inputs.tracktotal.value.trim() || String(n);
+    if (!Object.keys(set).length && pic.mode === "keep" && !titles) { done = true; close(); toast("Nothing changed"); return; }
+    const body = { set };
+    if (pic.mode === "new") body.picture = pic.data; else if (pic.mode === "remove") body.remove_picture = true;
+    saving = true; stopped = false; fs.disabled = true; go.disabled = true; err.textContent = "";
+    if (todo.length > 1) cancel.textContent = "Stop"; else cancel.disabled = true;
+    const line = el("div"), bar = el("i"), saved = [], fails = [];
+    prog.textContent = ""; prog.append(line, el("div", { class: "bar" }, bar));
+    for (const [i, s] of todo.entries()) {
+      if (stopped) break;
+      line.textContent = todo.length > 1 ? `Saving ${i + 1} of ${todo.length}…` : "Saving…";
+      bar.style.width = (i / todo.length * 100).toFixed(1) + "%";
+      const req = { ...body, paths: [s.path], set: { ...set } };
+      if (numbering) req.set.track = String(shown.indexOf(s) + 1);
+      if (titles) req.set.title = fromName(s.name);
+      try {
+        const r = await api("tags", { method: "POST", body: req }), f = (r.failed || [])[0];
+        if (!f) saved.push(s); else { fails.push({ s, error: f.error }); if (f.code === 503) stopped = true; }
+      } catch (e) { fails.push({ s, error: e.message }); stopped = true; } // the request itself: the rest would fail as it did
+    }
+    saving = false; fs.disabled = false; go.disabled = false; cancel.disabled = false; cancel.textContent = "Cancel"; prog.textContent = "";
+    let extra = "";
+    if (saved.length && pic.mode === "new" && also.checked) {
+      try { await coverFiles([...new Set(saved.map(s => parent(s.path)))], pic.blob); }
+      catch (e) { extra = "; cover.jpg wasn't saved: " + e.message; }
+    }
+    if (saved.length) libraryBanner();
+    const left = todo.filter(s => !saved.includes(s));
+    if (!left.length) {
+      done = true;
+      if (sh.isConnected) close();
+      if (S.selecting) { S.sel.clear(); S.selecting = false; }
+      await reload();
+      toast((saved.length === 1 ? "Saved" : `Saved ${saved.length} songs`) + extra);
+      return;
+    }
+    todo = left;
+    const lines = fails.slice(0, 4).map(f => (one ? "" : f.s.name + ": ") + f.error);
+    if (fails.length > 4) lines.push(`And ${fails.length - 4} more`);
+    if (left.length > fails.length) lines.push(`Stopped: ${left.length - fails.length} not tried yet`);
+    err.textContent = lines.join("\n"); err.scrollIntoView({ block: "nearest" });
+    if (saved.length) { go.textContent = "Save the rest"; reload(); toast(`${saved.length} saved, ${left.length} not` + extra); }
+  };
+  setTimeout(() => {
+    const first = !ro && mouse.matches && [...fs.querySelectorAll(".field")].find(i => !i.disabled);
+    if (first && sh.isConnected) first.focus();
+  }, 50);
 }
 
 async function search(q) {

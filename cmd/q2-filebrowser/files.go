@@ -57,9 +57,9 @@ type entry struct {
 	Path  string `json:"path,omitempty"`
 }
 
-// transfer is a file moving, for the Q2's page.
+// transfer is a file moving, for the Q2's page; tag is a song's tags being saved.
 type transfer struct {
-	up         bool
+	up, tag    bool
 	name       string
 	done, size int64
 }
@@ -67,12 +67,16 @@ type transfer struct {
 type files struct {
 	root string
 
-	mu     sync.Mutex
-	moving map[*transfer]bool
-	ctx    context.Context // cancelled on quit: uploads end
-	stop   context.CancelFunc
-	once   sync.Once
+	mu      sync.Mutex
+	moving  map[*transfer]bool
+	ctx     context.Context // cancelled on quit: uploads end
+	stop    context.CancelFunc
+	once    sync.Once
+	writers sync.WaitGroup // tag saves under way, which quitting waits for
 }
+
+// stopped is whether File Browser is turning off.
+func (f *files) stopped() bool { f.init(); return f.ctx.Err() != nil }
 
 func (f *files) init() {
 	f.once.Do(func() {
@@ -99,6 +103,29 @@ func (f *files) begin(up bool, name string, size int64) *transfer {
 	f.moving[t] = true
 	f.mu.Unlock()
 	return t
+}
+
+// beginTags is a song's tags being saved: busy, as a transfer is, but not one activity counts.
+func (f *files) beginTags(name string) *transfer {
+	t := f.begin(false, name, 0)
+	f.mu.Lock()
+	t.tag = true
+	f.mu.Unlock()
+	return t
+}
+
+// saving is how many songs' tags are being saved, and the newest one's name.
+func (f *files) saving() (n int, name string) {
+	f.init()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for t := range f.moving {
+		if t.tag {
+			n++
+			name = t.name
+		}
+	}
+	return
 }
 
 func (f *files) end(t *transfer) {
@@ -128,6 +155,9 @@ func (f *files) activity() (ups, downs int, name string, done, size int64) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	for t := range f.moving {
+		if t.tag {
+			continue
+		}
 		if t.up {
 			ups++
 			name = t.name

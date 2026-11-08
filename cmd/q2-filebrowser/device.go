@@ -8,8 +8,8 @@ import (
 )
 
 // The Q2's File Browser page (Q2 Pod's card app page, q2-pod's patch/addon.c): where to open it
-// (its row opens the QR code), what is moving, the card's room, Read Only and Turn Off. Rows' kinds
-// are as for Soulseek's page; "refresh" asks again every 2 s.
+// (its row opens the QR code), Edit Tags (devtags.go), what is moving, the card's room, Read Only and
+// Turn Off. Rows' kinds are as for Soulseek's page; "refresh" asks again every 2 s.
 
 func info(title, sub string) q2spot.Row { return q2spot.Row{Kind: "info", Title: title, Subtitle: sub} }
 
@@ -35,18 +35,28 @@ func (a *app) device(req q2spot.Request) q2spot.Reply {
 	switch req.Op {
 	case "caps":
 		var rows []q2spot.Row
-		for _, op := range []string{"menu", "readonly", "stop"} {
+		for _, op := range []string{"menu", "readonly", "stop", "tags", "song", "field", "search", "set", "setid",
+			"setdir", "library"} {
 			rows = append(rows, q2spot.Row{Kind: "op", URI: op})
 		}
 		return q2spot.Reply{Message: version, Rows: rows}
 	case "menu":
+		d := a.devTags()
+		d.aim(nil)
+		d.forget()
 		open := q2spot.Row{Kind: "remote", Title: "Open on Your Phone",
 			Subtitle: "http://" + a.addr() + " · PIN " + spaced(set.PIN)}
 		if a.addr() == "" {
 			open.Subtitle = "Connect the Q2 to Wi-Fi first"
 		}
-		rows := []q2spot.Row{open}
+		rows := []q2spot.Row{open, {Kind: "list", URI: "tags", Title: "Edit Tags",
+			Subtitle: "Change a song's title, artist, album…", Context: "/"}}
 		free, total := a.files.usage()
+		tagged, song := a.files.saving()
+		// A save (the Q2's or the phone's) counts every song it has left, between songs too; a song
+		// written outside one, as written.
+		left, now, theirs := d.pending()
+		late, recent := d.lateRow()
 		if ups, downs, name, done, sz := a.files.activity(); ups+downs > 0 {
 			var what []string
 			if ups > 0 {
@@ -62,7 +72,16 @@ func (a *app) device(req q2spot.Request) q2spot.Reply {
 			if sz > 0 {
 				sub += fmt.Sprintf(" · %d%%", done*100/sz)
 			}
+			if tagged > 0 {
+				sub += " · saving tags"
+			}
 			rows = append(rows, info(name, sub))
+		} else if left > 0 {
+			rows = append(rows, info("Saving tags · "+now, plural(left+max(tagged-theirs, 0), "song")+" left"))
+		} else if tagged > 0 {
+			rows = append(rows, info("Saving tags · "+song, plural(tagged, "song")))
+		} else if recent {
+			rows = append(rows, late)
 		} else if total > 0 {
 			rows = append(rows, info("Card: "+size(free)+" free", "of "+size(total)))
 		}
@@ -89,6 +108,8 @@ func (a *app) device(req q2spot.Request) q2spot.Reply {
 	case "stop":
 		go func() { time.Sleep(300 * time.Millisecond); a.shutdown() }() // the reply first
 		return ok("File Browser off")
+	case "tags", "song", "field", "search", "set", "setid", "setdir", "library":
+		return a.devTagOp(req)
 	}
 	return q2spot.Fail(q2spot.Unsupported, "Update File Browser on the card")
 }
