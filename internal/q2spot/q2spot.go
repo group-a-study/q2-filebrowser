@@ -5,7 +5,6 @@ package q2spot
 
 import (
 	"errors"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -232,7 +231,6 @@ func answer(c net.Conn, h Handler) {
 func call(h Handler, req Request) (out []byte) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("q2spot %s: %v", req.Op, r)
 			out, _ = Fail(Error, "Something went wrong").Encode(req.ID)
 		}
 	}()

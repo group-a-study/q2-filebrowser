@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
-	"log"
 	"mime"
 	"net"
 	"net/http"
@@ -322,10 +321,9 @@ func (w *web) zip(rw http.ResponseWriter, paths []string) {
 	rw.Header().Set("Content-Type", "application/zip")
 	rw.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": name + ".zip"}))
 	rw.Header().Set("X-Content-Type-Options", "nosniff")
-	if err := f.zip(paths, rw); err != nil {
-		// The headers are gone: a ZIP cut short is what the browser gets, as for a dropped download.
-		log.Printf("zip: %v", err)
-	}
+	// On an error the headers are gone: a ZIP cut short is what the browser gets, as for a dropped
+	// download.
+	f.zip(paths, rw)
 }
 
 // size is n bytes as the Q2's page and the browser show it.

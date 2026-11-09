@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -1048,7 +1047,5 @@ func (a *app) devLibraryLater() {
 	d.mu.Lock()
 	d.library = false
 	d.mu.Unlock()
-	if err := requestLibrary(); err != nil {
-		log.Printf("library: %v", err)
-	}
+	requestLibrary() // if it fails, Library → Update Local Music on the Q2 still does it
 }

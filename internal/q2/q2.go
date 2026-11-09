@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"io"
-	"log"
 	"math/big"
 	"net"
 	"os"
@@ -170,35 +169,6 @@ func ReadAt(path string, off int64, buf []byte) (int, error) {
 		err = nil
 	}
 	return n, err
-}
-
-// Logger logs to path in /tmp (never the card: an open log would keep it busy), starting the file
-// again once it passes max bytes.
-type Logger struct {
-	Path string
-	Max  int64
-	mu   sync.Mutex
-}
-
-func (l *Logger) Write(p []byte) (int, error) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if st, err := os.Stat(l.Path); err == nil && st.Size()+int64(len(p)) > l.Max {
-		os.Rename(l.Path, l.Path+".1")
-	}
-	f, err := os.OpenFile(l.Path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
-	if err != nil {
-		return len(p), nil
-	}
-	f.Write(p)
-	f.Close()
-	return len(p), nil
-}
-
-// SetupLog sends the standard logger to /tmp/<name>.log (256 KB, then one older file).
-func SetupLog(name string) {
-	log.SetFlags(log.LstdFlags | log.LUTC)
-	log.SetOutput(&Logger{Path: "/tmp/" + name + ".log", Max: 256 << 10})
 }
 
 // Every runs fn every d until stop is closed.

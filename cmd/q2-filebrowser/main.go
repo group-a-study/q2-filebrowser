@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -73,10 +72,10 @@ func main() {
 	debug.SetGCPercent(50)
 	debug.SetMemoryLimit(32 << 20)
 	q2.Card = o.card
-	q2.SetupLog("q2-filebrowser")
 	a, err := start(o)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, "q2-filebrowser:", err)
+		os.Exit(1)
 	}
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
@@ -163,19 +162,14 @@ func start(o options) (*app, error) {
 	}
 	go serveWeb(a, a.ln)
 	a.writeState() // the code there before the browse socket answers: Q2 Pod opens it then
-	go func() {
-		if err := q2spot.Serve(o.browse, a.device); err != nil {
-			log.Printf("browse socket: %v", err)
-		}
-	}()
-	if _, err := q2.Control(o.control, func(cmd []byte) {
+	// Without the browse socket the phone's page still works; without the control socket the
+	// page's Stop and the idle timer still end the app.
+	go q2spot.Serve(o.browse, a.device)
+	q2.Control(o.control, func(cmd []byte) {
 		if len(cmd) > 0 && cmd[0] == 'q' {
 			a.shutdown()
 		}
-	}); err != nil {
-		log.Printf("control socket: %v", err)
-	}
-	log.Printf("%s serving %s on port %d", version, o.card, a.port)
+	})
 	return a, nil
 }
 
@@ -197,12 +191,10 @@ func (a *app) run() {
 			select {
 			case <-saved:
 			case <-time.After(2500 * time.Millisecond):
-				log.Printf("stopping with a tag save under way")
 			}
 			a.state.Remove()
 			os.Remove(a.opts.browse)
 			os.Remove(a.opts.control)
-			log.Printf("stopped")
 			return
 		case <-t.C:
 			a.writeState()
@@ -211,7 +203,6 @@ func (a *app) run() {
 			idle := time.Since(a.used)
 			a.mu.Unlock()
 			if s.IdleMinutes > 0 && !a.files.busy() && idle > time.Duration(s.IdleMinutes)*time.Minute {
-				log.Printf("idle: stopping")
 				a.shutdown()
 			}
 		}

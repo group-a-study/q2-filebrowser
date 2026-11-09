@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -706,7 +705,6 @@ func declared(mime string) string {
 // mustn't end the app.
 func guard(err *error) {
 	if r := recover(); r != nil {
-		log.Printf("tags: %v", r)
 		*err = ErrCorrupt
 	}
 }
