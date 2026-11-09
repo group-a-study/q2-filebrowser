@@ -139,8 +139,10 @@ func (w *web) login(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// changes are the routes that change the card, refused while read only.
-var changes = map[string]bool{"upload": true, "mkdir": true, "rename": true, "move": true, "delete": true}
+// changes are the routes that change the card (or ask the Q2 to), refused while read only; tags only
+// when posted, since reading them is looking.
+var changes = map[string]bool{"upload": true, "mkdir": true, "rename": true, "move": true, "delete": true,
+	"library": true}
 
 func (w *web) api(rw http.ResponseWriter, r *http.Request) {
 	route := strings.TrimPrefix(r.URL.Path, "/api/")
@@ -159,14 +161,15 @@ func (w *web) api(rw http.ResponseWriter, r *http.Request) {
 	if route == "state" {
 		free, total := f.usage()
 		reply(rw, http.StatusOK, map[string]any{"version": version, "read_only": set.ReadOnly, "free": free,
-			"total": total, "card": cardReady()})
+			"total": total, "card": cardReady(), "tags": true, "library": libraryAvailable(), "tag_exts": apiTagExts()})
 		return
 	}
 	if !cardReady() {
 		refuse(rw, http.StatusServiceUnavailable, "The card isn't there just now (USB storage?)")
 		return
 	}
-	if changes[route] && set.ReadOnly {
+	post := r.Method == http.MethodPost
+	if (changes[route] || route == "tags" && post) && set.ReadOnly {
 		refuse(rw, http.StatusForbidden, "Read only: allow changes on the Q2 (Streaming → File Browser)")
 		return
 	}
@@ -177,13 +180,13 @@ func (w *web) api(rw http.ResponseWriter, r *http.Request) {
 		Paths []string `json:"paths"`
 		To    string   `json:"to"`
 	}
-	if r.Method == http.MethodPost {
+	// A tags POST reads its own body, bigger for a cover picture (tagsweb.go).
+	if post && route != "tags" {
 		if err := json.NewDecoder(http.MaxBytesReader(rw, r.Body, 256<<10)).Decode(&body); err != nil {
 			refuse(rw, http.StatusBadRequest, "bad body")
 			return
 		}
 	}
-	post := r.Method == http.MethodPost
 	switch {
 	case route == "list" && r.Method == http.MethodGet:
 		entries, clean, err := f.list(q.Get("path"), hiddenToo)
@@ -241,6 +244,14 @@ func (w *web) api(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 		reply(rw, http.StatusOK, map[string]bool{"ok": true})
+	case route == "tags" && r.Method == http.MethodGet:
+		w.getTags(rw, r, q["path"])
+	case route == "tags" && post:
+		w.saveTags(rw, r)
+	case route == "cover" && (r.Method == http.MethodGet || r.Method == http.MethodHead):
+		w.cover(rw, r, q.Get("path"))
+	case route == "library" && post:
+		w.library(rw)
 	default:
 		http.NotFound(rw, r)
 	}

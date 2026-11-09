@@ -58,6 +58,10 @@ func newRig(t *testing.T) *rig {
 	write(t, filepath.Join(card, ".deezer/arl"), "secret")
 	write(t, filepath.Join(card, "page.html"), "<script>alert(1)</script>")
 	cardReady = func() bool { return true }
+	// The firmware's files are the test's own, not whatever this machine's /tmp holds.
+	caps, lib := capsFile, libraryFile
+	capsFile, libraryFile = filepath.Join(tmp, "caps"), filepath.Join(tmp, "library")
+	t.Cleanup(func() { capsFile, libraryFile = caps, lib })
 	o := options{dir: filepath.Join(card, ".filebrowser"), card: card, statusFile: filepath.Join(tmp, "state"),
 		browse: filepath.Join(tmp, "browse.sock"), control: filepath.Join(tmp, "ctl.sock"), port: freePort(t)}
 	a, err := start(o)
@@ -69,6 +73,9 @@ func newRig(t *testing.T) *rig {
 	r.hc = &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	go func() { a.run(); close(r.done) }()
 	t.Cleanup(func() { a.shutdown(); <-r.done })
+	// The Q2's socket is made by a goroutine: a test as short as a few ms could end before it, and
+	// leave it to be made in a folder being removed.
+	waitFor(t, "the browse socket", 3*time.Second, func() bool { _, err := os.Stat(o.browse); return err == nil })
 	return r
 }
 
@@ -470,7 +477,7 @@ func TestChanges(t *testing.T) {
 func TestDevice(t *testing.T) {
 	r := newRig(t)
 	head, rows := r.ask("menu")
-	if head[1] != "ok" || head[2] != "refresh" || len(rows) != 4 {
+	if head[1] != "ok" || head[2] != "refresh" || len(rows) != 5 {
 		t.Fatalf("menu %q %q", head, rows)
 	}
 	pin := r.a.settings().PIN
@@ -478,8 +485,9 @@ func TestDevice(t *testing.T) {
 		(r.a.addr() != "" && rows[0][3] != "http://"+r.a.addr()+" · PIN "+pin[:3]+" "+pin[3:]) {
 		t.Fatalf("remote %q", rows[0])
 	}
-	if rows[1][0] != "info" || !strings.HasPrefix(rows[1][2], "Card: ") || rows[2][1] != "readonly" || rows[2][2] != "Read Only: Off" ||
-		rows[3][1] != "stop" || rows[3][2] != "Turn Off File Browser" || !strings.Contains(rows[3][3], "15 minutes") {
+	if rows[1][1] != "tags" || rows[1][2] != "Edit Tags" || rows[2][0] != "info" || !strings.HasPrefix(rows[2][2], "Card: ") ||
+		rows[3][1] != "readonly" || rows[3][2] != "Read Only: Off" ||
+		rows[4][1] != "stop" || rows[4][2] != "Turn Off File Browser" || !strings.Contains(rows[4][3], "15 minutes") {
 		t.Fatalf("rows %q", rows)
 	}
 	// Just turned on, the Q2 is held awake for the phone to scan the code.
@@ -491,8 +499,8 @@ func TestDevice(t *testing.T) {
 	// A transfer under way: what, and the Q2 held awake.
 	tr := r.a.files.begin(true, "01 Pendulum.flac", 200)
 	r.a.files.progress(tr, 50)
-	if _, rows = r.ask("menu"); rows[1][2] != "01 Pendulum.flac" || rows[1][3] != "receiving 1 file · 25%" {
-		t.Fatalf("moving %q", rows[1])
+	if _, rows = r.ask("menu"); rows[2][2] != "01 Pendulum.flac" || rows[2][3] != "receiving 1 file · 25%" {
+		t.Fatalf("moving %q", rows[2])
 	}
 	waitFor(t, "the hold", 3*time.Second, func() bool { return r.state()["hold"] == "1" })
 	r.a.files.end(tr)
